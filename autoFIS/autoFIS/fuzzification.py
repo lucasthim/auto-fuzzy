@@ -38,13 +38,13 @@ class Fuzzification:
                     size_attr.append(aux.shape[1])
                 else:
                     attribute = MX[:, [i]]
-                    aux = triangle_mb(attribute, triangle_format, n)
+                    aux = self.triangle_mb(attribute, triangle_format, n)
                     size_attr.append(aux.shape[1])
                 list_uX.append(aux)
         else:
             for i in range(MX.shape[1]):
                 attribute = MX[:, [i]]
-                aux = triangle_mb(attribute, triangle_format, n)
+                aux = self.triangle_mb(attribute, triangle_format, n)
                 list_uX.append(aux)
                 size_attr.append(aux.shape[1])
 
@@ -134,7 +134,7 @@ class Fuzzification:
         return: Output column vector
         """
 
-        a, b, c, d = params
+        a, b, c, d = trapz_points
         y1 = np.zeros(np.shape(x))
         y2 = np.zeros(np.shape(x))
 
@@ -191,14 +191,14 @@ class Fuzzification:
         else:
             ymin = min(y)
             ymax = max(y)
-            center = np.linspace(ymin, ymax, n)
+            center = np.linspace(ymin, ymax, n_membership_functions)
 
         membership_far_left = self.trapmf(y, [-np.inf, -np.inf, center[0], center[1]])
-        membership_far_right = self.trapmf(y, [center[n - 2], center[n - 1], np.inf, np.inf])
+        membership_far_right = self.trapmf(y, [center[n_membership_functions - 2], center[n_membership_functions - 1], np.inf, np.inf])
 
         fuzzy_sets = np.array(membership_far_left)
         for i in range(n_membership_functions - 2):
-            aux = self.trimf(y, center[i:i + n])
+            aux = self.trimf(y, center[i:i + n_membership_functions])
             fuzzy_sets = np.append(fuzzy_sets, aux, 1)
 
         fuzzy_sets = np.append(fuzzy_sets, membership_far_right, 1)
