@@ -10,6 +10,7 @@ from .pcd_filter import pcd_basic_premises, pcd_derived_premises
 
 class Formulation:
     def __init__(self, ux, c_bin, ref_attributes, p_by_attribute, np_by_attribute, attributes_contain_negation):
+        
         # ------- Received parameters from Fuzzification --------------
         self.ux = ux
         self.c_bin = c_bin
@@ -18,8 +19,9 @@ class Formulation:
         self.p_by_attribute = p_by_attribute
         self.attributes_contain_negation = attributes_contain_negation
         self.ref_attributes = ref_attributes
+        
         # ------- Parameters given by user -----------------------
-        self.maximum_size_premise = []  # ordem_premisas
+        self.premise_max_size = []  # premise_max_size
         # Parameters of area filter
         self.criteria_support = []  # 'cardinalidade relativa', 'frequencia relativa'
         self.threshold_support = []  # tolerancia da area
@@ -68,10 +70,10 @@ class Formulation:
 
         return new_ref_attribute, new_premises, new_ux  # [(0, 1), (3,), (7, 8)]
 
-    def gen_ARB(self, ordem_premisas, tnorm, par_area, par_overlapping, par_pcd):
+    def generate_premises(self, premise_max_size, tnorm, par_area, par_overlapping, par_pcd):
         """
-        Genera premisas de orden 1 a m
-        :param ordem_premisas:  2,3,4,5
+        Generate premises of order 1 to m.
+        :param premise_max_size:  2,3,4,5
         :param tnorm:           'min' or 'prod'
         :param par_area:        [criteria, threshold_area]
         :param par_overlapping: [isEnableOverlapping, threshold_similarity]
@@ -79,7 +81,7 @@ class Formulation:
         :return: premisas y sus correspondientes uX
                 arbol = [ [p1, uXp1], [p2, uXp2], ...[pm, uXpm]]
         """
-        self.maximum_size_premise = ordem_premisas  # 1,2,3,4,5....
+        self.premise_max_size = premise_max_size  # 1,2,3,4,5....
         self.tnorm = tnorm
         self.load_filter_parameters(par_area, par_overlapping, par_pcd)
 
@@ -104,9 +106,9 @@ class Formulation:
         ref_p2_survivors, p2_survivors, ux_p2_survivors = self.premises_validation(ref_p2, p2)
         arbol.append([p2_survivors, ux_p2_survivors])
 
-        if self.maximum_size_premise > 2:
+        if self.premise_max_size > 2:
             p_i, ref_i = p2_survivors[:], ref_p2_survivors[:]
-            for i in range(2, self.maximum_size_premise):
+            for i in range(2, self.premise_max_size):
                 ref_next, p_next = self.premises_next_level(basic_premises, ref_premises, p_i, ref_i)  # ---
                 # new_premises, ref_next
                 ref_pi_survivors, pi_survivors, ux_pi_survivors = self.premises_validation(ref_next, p_next)

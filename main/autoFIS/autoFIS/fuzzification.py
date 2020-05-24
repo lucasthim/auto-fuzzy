@@ -1,4 +1,4 @@
-__author__ = 'jparedes'
+__author__ = 'jparedes and lthimoteo'
 
 import numpy as np
 import pandas as pd
@@ -8,43 +8,53 @@ import scipy.sparse as sp
 class Fuzzification:
 
     '''
+
     Fuzzification module of a Fuzzy Inference System
 
-    This class is responsible for building the membership functions for an attribute
+    This class is responsible for building the membership functions for an attribute.
+
     '''
     
-    def __init__(self, X, categorical_attributes_mask = None):
-        self.X = X
+    def __init__(self):
         self.uX = []
-        self.categorical_attributes_mask = categorical_attributes_mask  # [0, 1, 0]
+        self.categorical_attributes_mask = []  # [0, 1, 0]
         self.num_of_premises_by_attribute = [0]                  # [3, 2, 3]
         self.attribute_premises = []               # [(0,1,2),(3,4),(5,6,7)]
         self.indexes_premises_contain_negation = []
-        self.ref_attributes = range(len(categorical_attributes_mask))
 
-    def build_uX(self, triangle_format, n):  
-        # triangle_format con referencia a la fuzzificacion triangular: normal o tukey
-        # Calculate 'uX' and 'size of attributes'
+
+    def build_membership_functions(self,X,categorical_attributes_mask, triangle_format, n_membership_functions,enable_negation):  
+        
+        '''
+        Build membership functions for attributes
+        
+        Parameters:
+            X: attributes to fuzzify 
+            categorical_attributes_mask: array of booleans indicating which attributes are categorical
+            triangle_format: 'normal' or 'tukey'
+            n_membership_functions: number of membership functions per attribute. Generally 3,5 or 7
+            enable_negation: boolean to enable creation of membership function negations. 
+        '''
+
         list_uX = []
         size_attr = []
-        MX = self.X
         if self.categorical_attributes_mask:
-            for i in range(MX.shape[1]):
+            for i in range(X.shape[1]):
                 if self.categorical_attributes_mask[i] == 1:
-                    attribute = pd.DataFrame(MX[:, [i]].tolist(), dtype="category")  # print attribute.describe()
+                    attribute = pd.DataFrame(X[:, [i]].tolist(), dtype="category")  # print attribute.describe()
                     aux = pd.get_dummies(attribute).values
                     if aux.shape[1] == 2:  # new IF
                         aux = np.delete(aux, 1, axis=1)
                     size_attr.append(aux.shape[1])
                 else:
-                    attribute = MX[:, [i]]
-                    aux = self.triangle_mb(attribute, triangle_format, n)
+                    attribute = X[:, [i]]
+                    aux = self.triangle_mb(attribute, triangle_format, n_membership_functions)
                     size_attr.append(aux.shape[1])
                 list_uX.append(aux)
         else:
-            for i in range(MX.shape[1]):
-                attribute = MX[:, [i]]
-                aux = self.triangle_mb(attribute, triangle_format, n)
+            for i in range(X.shape[1]):
+                attribute = X[:, [i]]
+                aux = self.triangle_mb(attribute, triangle_format, n_membership_functions)
                 list_uX.append(aux)
                 size_attr.append(aux.shape[1])
 
@@ -53,17 +63,19 @@ class Fuzzification:
         number_columns = self.uX.shape[1]
         self.attribute_premises = self.gather_columnspremises_by_attribute(range(number_columns), size_attr)
         self.indexes_premises_contain_negation = number_columns * [0]
+        self.ref_attributes = range(len(categorical_attributes_mask))
+
+        if enable_negation:
+            self.add_negation(categorical_attributes_mask)
 
 
-    def add_negation(self):
-        num_attributes = len(self.categorical_attributes_mask)
-        # ref_attributes = range(num_attributes)
-        num_col = sum(self.num_of_premises_by_attribute)  # number of columns, individual premises
+    def add_negation(self,categorical_attributes_mask):
+        num_attributes = len(categorical_attributes_mask)
+        num_col = sum(self.num_of_premises_by_attribute) 
 
-        # attributes with more than 2 membership functions
-        attrib_more_2fp = [0 if i < 3 else 1 for i in self.num_of_premises_by_attribute]
-        index_premises_negation = [1 if (attrib_more_2fp[i] + 1 - self.categorical_attributes_mask[i]) != 0
-                                   else 0 for i in range(len(self.categorical_attributes_mask))]
+        attr_with_more_than_2_mf = [0 if i < 3 else 1 for i in self.num_of_premises_by_attribute]
+        index_premises_negation = [1 if (attr_with_more_than_2_mf[i] + 1 - categorical_attributes_mask[i]) != 0
+                                   else 0 for i in range(len(categorical_attributes_mask))]
         attrib_survivors_negation = list(compress(range(num_attributes), index_premises_negation))
 
         premises_attrib_neg = self.gather_columnspremises_by_attribute(range(num_col, 2*num_col),
@@ -72,19 +84,20 @@ class Fuzzification:
         premises_survivors_negation = list(compress(premises_attrib_neg, list(pd.Series(self.num_of_premises_by_attribute)
                                                                               [attrib_survivors_negation])))  # Modified line
 
-        prem = [] # total premises (with negation) by attribute
+        total_premises = []
         for i in range(num_attributes):
             prem_attr_i = self.attribute_premises[i]
             if i in attrib_survivors_negation:
                 aux_index = attrib_survivors_negation.index(i)
                 prem_attr_i += premises_survivors_negation[aux_index]
-            prem.append(prem_attr_i)
+            total_premises.append(prem_attr_i)
         
-        prem_surv = pd.Series(self.attribute_premises)[attrib_survivors_negation]  # New line
-        ind_neg = [i for sub in list(prem_surv) for i in sub]  # New line
-        self.uX = np.concatenate((self.uX, 1. - self.uX[:, ind_neg]), axis=1)  # Modified line
-        self.attribute_premises = prem[:]
-        self.num_of_premises_by_attribute = [len(i) for i in prem]  # servira para el filtro de overlapping basicamente
+        prem_surv = pd.Series(self.attribute_premises)[attrib_survivors_negation] 
+        ind_neg = [i for sub in list(prem_surv) for i in sub] 
+        self.uX = np.concatenate((self.uX, 1. - self.uX[:, ind_neg]), axis=1)
+        self.attribute_premises = total_premises[:]
+        # variable bellow will be used for the overlapping filter
+        self.num_of_premises_by_attribute = [len(i) for i in prem]
         self.indexes_premises_contain_negation = index_premises_negation
 
 
