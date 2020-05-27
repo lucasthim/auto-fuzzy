@@ -7,7 +7,7 @@ import os
 
 
 
-class Lecture:
+class DataPreparation:
     def __init__(self):
         self.X = []  # Dataset attributes
         self.cBin = []  # Binary Class Output classifier
@@ -64,8 +64,8 @@ class Lecture:
         return X, cBin, freq_classes, dict_freq, dict_labels
 
 def main():
-    print ('Module 1 <<Lecture>>\n=============')
-    L = Lecture()
+    print ('Module 1 <<DataPreparation>>\n=============')
+    L = DataPreparation()
     filezip_name = "D:\\Jorg\Projects\\autoFIS\\test\\datas" + '\\' + 'saheart-10-fold_csv.zip'
     print (filezip_name)
     L.read_1cv(filezip_name, 'saheart-10-7tra.csv', 'saheart-10-7tst.csv')

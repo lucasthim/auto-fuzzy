@@ -3,87 +3,64 @@ __author__ = 'jparedes'
 import numpy as np
 from itertools import combinations, product, chain
 
-from .support_filter import support_basic_premises, support_premises_derived
-from .similarity_filter import similarity_basic_premises, similarity_derived_premises
-from .pcd_filter import pcd_basic_premises, pcd_derived_premises
+from .filter.support_filter import support_basic_premises, support_premises_derived
+from .filter.similarity_filter import similarity_basic_premises, similarity_derived_premises
+from .filter.pcd_filter import pcd_basic_premises, pcd_derived_premises
 
 
 class Formulation:
-    def __init__(self, ux, c_bin, ref_attributes, p_by_attribute, np_by_attribute, attributes_contain_negation):
+    def __init__(self, ux, num_of_attributes, target_class, tnorm, antecedents_by_attribute, num_of_antecedents_by_attribute, 
+    attributes_negation_mask, premise_max_size, criteria_support, threshold_support, enable_similarity_premises_bases, 
+    enable_similarity_premises_derived, threshold_similarity, enable_pcd_premises_base, enable_pcd_premises_derived):
         
         # ------- Received parameters from Fuzzification --------------
         self.ux = ux
-        self.c_bin = c_bin
+        self.num_of_attributes = num_of_attributes
+        self.attributes_num_list = range(0,num_of_attributes)
+
+        self.target_class = target_class
         self.tnorm = []
-        self.np_by_attribute = np_by_attribute
-        self.p_by_attribute = p_by_attribute
-        self.attributes_contain_negation = attributes_contain_negation
-        self.ref_attributes = ref_attributes
+        self.antecedents_by_attribute = antecedents_by_attribute
+        self.num_of_antecedents_by_attribute = num_of_antecedents_by_attribute
+        self.attributes_negation_mask = attributes_negation_mask
         
+
         # ------- Parameters given by user -----------------------
-        self.premise_max_size = []  # premise_max_size
+        self.premise_max_size = premise_max_size 
+
         # Parameters of area filter
-        self.criteria_support = []  # 'cardinalidade relativa', 'frequencia relativa'
-        self.threshold_support = []  # tolerancia da area
+        self.criteria_support = criteria_support  # 'cardinalidade relativa', 'frequencia relativa'
+        self.threshold_support = threshold_support  # tolerancia da area
+        
         # Parameters of overlapping filter
-        self.isEnableSimilarityPremisesBase = []
-        self.isEnableSimilarityPremisesDerived = []
-        self.threshold_similarity = []
+        self.enable_similarity_premises_bases = enable_similarity_premises_bases
+        self.enable_similarity_premises_derived = enable_similarity_premises_derived
+        self.threshold_similarity = threshold_similarity
+        
         # Parameters of PCD filter
-        self.isEnablePCDpremisesBase = []
-        self.isEnablePCDpremisesDerived = []
+        self.enable_pcd_premises_base = enable_pcd_premises_base
+        self.enable_pcd_premises_derived = enable_pcd_premises_derived
 
-    def load_filter_parameters(self, par_area, par_overlapping, par_pcd):
-        # Load area parameters
-        self.criteria_support = par_area[0]
-        self.threshold_support = par_area[1]
-        # Load overlapping parameters
-        self.isEnableSimilarityPremisesBase = par_overlapping[0][0]
-        self.isEnableSimilarityPremisesDerived = par_overlapping[0][1]
-        self.threshold_similarity = par_overlapping[1]
-        # Load logic enable of PCD
-        self.isEnablePCDpremisesBase = par_pcd[0]
-        self.isEnablePCDpremisesDerived = par_pcd[1]
 
-    def get_basic_premises(self):
-        """
-        Se obtiene las premisas de orden 1 que han de generar posteriomente las premisas compuestas
-        :return: premisas sobrevivientes agrupadas en los atributos que pertenecen
-                [(0,1,2), (5,6), (9,11,13)]
+    def generate_premises(self):
         """
 
-        # Filter area
-        aux = support_basic_premises(self.ref_attributes, self.p_by_attribute, self.np_by_attribute, self.ux,
-                                       self.criteria_support, self.threshold_support, self.attributes_contain_negation)
-        new_ref_attribute, new_premises, new_num_premises_by_attrib, new_ux = aux
-
-        # Filter PCD
-        if self.isEnablePCDpremisesBase:
-            aux1 = pcd_basic_premises(new_ref_attribute, new_premises, new_num_premises_by_attrib, new_ux, self.c_bin)
-            new_ref_attribute, new_premises, new_num_premises_by_attrib, new_ux = aux1
-
-        # Filter overlapping
-        if self.isEnableSimilarityPremisesBase and len(new_num_premises_by_attrib) > 1:
-            aux2 = similarity_basic_premises(new_ref_attribute, new_premises, new_num_premises_by_attrib,
-                                              new_ux, self.threshold_similarity)
-            new_ref_attribute, new_premises, new_num_premises_by_attrib, new_ux = aux2
-
-        return new_ref_attribute, new_premises, new_ux  # [(0, 1), (3,), (7, 8)]
-
-    def generate_premises(self, premise_max_size, tnorm, par_area, par_overlapping, par_pcd):
-        """
         Generate premises of order 1 to m.
-        :param premise_max_size:  2,3,4,5
-        :param tnorm:           'min' or 'prod'
-        :param par_area:        [criteria, threshold_area]
-        :param par_overlapping: [isEnableOverlapping, threshold_similarity]
-        :param par_pcd:         [isEnablePCD]
-        :return: premisas y sus correspondientes uX
-                arbol = [ [p1, uXp1], [p2, uXp2], ...[pm, uXpm]]
+        
+        Parameters:
+            premise_max_size:  2,3,4,5
+            tnorm:           'min' or 'prod'
+            criteria:
+            threshold_area
+            enable_overlapping
+            threshold_similarity
+            enable_pcd:
+
+        :return: premises and their corresponding uX; tree = [ [p1, uXp1], [p2, uXp2], ...[pm, uXpm]]
         """
-        self.premise_max_size = premise_max_size  # 1,2,3,4,5....
-        self.tnorm = tnorm
-        self.load_filter_parameters(par_area, par_overlapping, par_pcd)
+        # self.premise_max_size = premise_max_size  # 1,2,3,4,5....
+        # self.tnorm = tnorm
+        # self.load_filter_parameters(par_area, par_overlapping, par_pcd)
 
         # Getting seed of premises
         ref_premises, basic_premises, u_base = self.get_basic_premises()  # [(0,1,2), (5,6), (9,11,13)]
@@ -117,6 +94,35 @@ class Formulation:
 
         return arbol
 
+
+    def get_basic_premises(self):
+        """
+        
+        Return only the premises (of order 1) that pass the overlapping and PCD filters.
+        These will then generate more complex premises.
+        return: [(0,1,2), (5,6), (9,11,13)]
+        
+        """
+
+        # Filter area
+        aux = support_basic_premises(self.attributes_num_list, self.antecedents_by_attribute, self.num_of_antecedents_by_attribute, self.ux,
+                                       self.criteria_support, self.threshold_support, self.attributes_negation_mask)
+        new_ref_attribute, new_premises, new_num_premises_by_attrib, new_ux = aux
+
+        # Filter PCD
+        if self.enable_pcd_premises_base:
+            aux1 = pcd_basic_premises(new_ref_attribute, new_premises, new_num_premises_by_attrib, new_ux, self.target_class)
+            new_ref_attribute, new_premises, new_num_premises_by_attrib, new_ux = aux1
+
+        # Filter overlapping
+        if self.enable_similarity_premises_bases and len(new_num_premises_by_attrib) > 1:
+            aux2 = similarity_basic_premises(new_ref_attribute, new_premises, new_num_premises_by_attrib,
+                                              new_ux, self.threshold_similarity)
+            new_ref_attribute, new_premises, new_num_premises_by_attrib, new_ux = aux2
+
+        return new_ref_attribute, new_premises, new_ux  # [(0, 1), (3,), (7, 8)]
+
+        
     def premises_validation(self, ref_premises, premises):
         ref_valid_premises = []
         valid_premises = []
@@ -141,12 +147,12 @@ class Formulation:
             new_ux = np.hstack(new_ux_prev)  # np.array(new_ux)
 
             # PCD validation
-            if self.isEnablePCDpremisesDerived and ref_valid_premises:
+            if self.enable_pcd_premises_derived and ref_valid_premises:
                 ref_valid_premises, valid_premises, new_ux = pcd_derived_premises(ref_valid_premises[:],
-                                                                                  valid_premises, new_ux, self.c_bin)
+                                                                                  valid_premises, new_ux, self.target_class)
 
             # Overlapping validation
-            if self.isEnableSimilarityPremisesDerived and len(ref_valid_premises) != 0:
+            if self.enable_similarity_premises_derived and len(ref_valid_premises) != 0:
                 aux = similarity_derived_premises(ref_valid_premises[:], valid_premises,
                                                    new_ux, self.threshold_similarity)
                 ref_valid_premises, valid_premises, new_ux = aux
