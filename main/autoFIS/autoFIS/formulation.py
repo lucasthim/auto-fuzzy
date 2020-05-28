@@ -58,41 +58,38 @@ class Formulation:
 
         :return: premises and their corresponding uX; tree = [ [p1, uXp1], [p2, uXp2], ...[pm, uXpm]]
         """
-        # self.premise_max_size = premise_max_size  # 1,2,3,4,5....
-        # self.tnorm = tnorm
-        # self.load_filter_parameters(par_area, par_overlapping, par_pcd)
 
         # Getting seed of premises
         ref_premises, basic_premises, u_base = self.get_basic_premises()  # [(0,1,2), (5,6), (9,11,13)]
 
         # Save single premises:
-        p1 = [(x,) for x in list(chain(*basic_premises))]  # [(0,), (1,), (2,), (5,), (6,), (9,), (11,), (13,)]
-        arbol = [[p1, u_base]]  # Seed
+        single_premises = [(x,) for x in list(chain(*basic_premises))]  # [(0,), (1,), (2,), (5,), (6,), (9,), (11,), (13,)]
+        tree = [[single_premises, u_base]]  # Seed
 
         # Generate premises of length 2 and their references
         ref_comb = list(combinations(ref_premises, 2))
-        ref_p2 = []
-        p2 = []
+        ref_double_premises = []
+        double_premises = []
         for i in ref_comb:
             i2 = [basic_premises[ref_premises.index(j)] for j in i]  # [basic_premises[j] for j in i]
-            p2_i = list(product(*i2))
+            double_premises_i = list(product(*i2))
 
-            p2 += p2_i
-            ref_p2 += [i] * len(p2_i)
+            double_premises += double_premises_i
+            ref_double_premises += [i] * len(double_premises_i)
 
-        ref_p2_survivors, p2_survivors, ux_p2_survivors = self.premises_validation(ref_p2, p2)
-        arbol.append([p2_survivors, ux_p2_survivors])
+        ref_double_premises_survivors, double_premises_survivors, ux_double_premises_survivors = self.premises_validation(ref_double_premises, double_premises)
+        tree.append([double_premises_survivors, ux_double_premises_survivors])
 
         if self.premise_max_size > 2:
-            p_i, ref_i = p2_survivors[:], ref_p2_survivors[:]
+            p_i, ref_i = double_premises_survivors[:], ref_double_premises_survivors[:]
             for i in range(2, self.premise_max_size):
                 ref_next, p_next = self.premises_next_level(basic_premises, ref_premises, p_i, ref_i)  # ---
                 # new_premises, ref_next
                 ref_pi_survivors, pi_survivors, ux_pi_survivors = self.premises_validation(ref_next, p_next)
-                arbol.append([pi_survivors, ux_pi_survivors])
+                tree.append([pi_survivors, ux_pi_survivors])
                 p_i, ref_i = p_next[:], ref_next[:]
 
-        return arbol
+        return tree
 
 
     def get_basic_premises(self):

@@ -27,6 +27,7 @@ class Fuzzification:
         self.triangle_format = triangle_format
         self.enable_negation = enable_negation
 
+        self.aux = None
 
     def build_membership_functions(self):  
         
@@ -44,25 +45,24 @@ class Fuzzification:
         list_uX = []
         size_attr = []
         if self.categorical_attributes_mask:
-            for i in range(self.X.shape[1]):
-                if self.categorical_attributes_mask[i]:
-                    attribute = pd.DataFrame(self.X[:, [i]].tolist(), dtype="category")  # print attribute.describe()
+            for attr in range(self.X.shape[1]):
+                if self.categorical_attributes_mask[attr]:
+                    attribute = pd.DataFrame(self.X[:, [attr]].tolist(), dtype="category")  # print attribute.describe()
                     aux = pd.get_dummies(attribute).values
                     if aux.shape[1] == 2:  # new IF
                         aux = np.delete(aux, 1, axis=1)
-                    size_attr.append(aux.shape[1])
                 else:
-                    attribute = self.X[:, [i]]
+                    attribute = self.X[:, [attr]]
                     aux = self.triangle_mb(attribute, self.triangle_format, self.fuzzy_sets_by_attribute)
-                    size_attr.append(aux.shape[1])
                 list_uX.append(aux)
+                size_attr.append(aux.shape[1])
         else:
-            for i in range(self.X.shape[1]):
-                attribute = self.X[:, [i]]
+            for attr in range(self.X.shape[1]):
+                attribute = self.X[:, [attr]]
                 aux = self.triangle_mb(attribute, self.triangle_format, self.fuzzy_sets_by_attribute)
                 list_uX.append(aux)
                 size_attr.append(aux.shape[1])
-
+        self.aux = list_uX
         self.uX = np.hstack(list_uX)
         self.num_of_antecedents_by_attribute = size_attr
         self.antecedents_by_attribute = self.gather_columnspremises_by_attribute(range(self.uX.shape[1]), size_attr)
@@ -206,9 +206,7 @@ class Fuzzification:
         Parameters:
             
             y: Attribute
-            
             triangle_format: 'normal' or 'tukey'
-            
             n_membership_functions: number of triangular membership functions
             
         Return: array with membership functions

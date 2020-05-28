@@ -5,7 +5,7 @@ from numpy import array, tile, any
 from itertools import compress
 
 
-class Decisions:
+class Decision:
     def __init__(self, estimate_values, classes_info):
         self.aggregation_values = estimate_values.copy()
         self.decision_parameters = classes_info
@@ -31,7 +31,7 @@ class Decisions:
         freq_classes = self.decision_parameters
 
         repeated_max_values_rows = tile(m.max(1), (m.shape[1], 1))  # m.max(1) maximo de cada fila
-        out = 1. * (m == repeated_max_values_rows.T)  # First binary decision (possibles ties)
+        out = 1 * (m == repeated_max_values_rows.T)  # First binary decision (possibles ties)
         d_row = out.sum(axis=1)  # Instances with compatibility in more than 1 class (tie)
         d_row_max = any([(d_row > 1), (d_row == 0)], axis=0)
         index_ties = list(compress(range(out.shape[0]), d_row_max.tolist()))  # index de las instancias com empate
@@ -63,7 +63,7 @@ def main():
                    [0.2, 0.1, 0.7]])
     # param = [[1, 0, 0], np.array([0.25, 0.4, 0.35])]
     param = [[0.25, 0.4, 0.35], [1, 0, 0]]
-    obj = Decisions(M1, param)
+    obj = Decision(M1, param)
     print (obj.dec_max_pert())
 
 if __name__ == '__main__':

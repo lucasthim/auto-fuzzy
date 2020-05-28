@@ -4,11 +4,11 @@ from sklearn import metrics
 import numpy as np
 from itertools import chain
 
-from .decisions import Decisions
+from .decision import Decision
 
 class Evaluation:
     def __init__(self, model="a", classes_premises="b", priority_classes="c"):
-        self.modelo = model
+        self.model = model
         self.classes_premises = classes_premises
         self.complementary_parameters = priority_classes
 
@@ -52,24 +52,24 @@ class Evaluation:
         num_classes = cbin_test.shape[1]
         ybin_est = np.zeros((u_test.shape[0], num_classes))
         for i in range(num_classes):
-            a = self.eval_model(self.modelo[i], u_test, t_norm)
+            a = self.eval_model(self.model[i], u_test, t_norm)
             ybin_est[:, [i]] = a
-        aux = Decisions(ybin_est, self.complementary_parameters)
+        aux = Decision(ybin_est, self.complementary_parameters)
         cbin_test_estimation = aux.dec_max_pert()
 
         reference = self.dummies2int(cbin_test)
         estimation = self.dummies2int(cbin_test_estimation)
         return self.metricas(reference, estimation, self.classes_premises)
 
-    def eval_model(self, modelo, u, tnorm):  # log regression con prod se friega bastante
-        # modelo: [referencias_premisas, weights, name_model]
-        name_model = modelo[2]
-        ind_u = modelo[0]
+    def eval_model(self, model, u, tnorm):  # log regression con prod se friega bastante
+        # model: [referencias_premisas, weights, name_model]
+        name_model = model[2]
+        ind_u = model[0]
 
         new_u = self.build_u_test(u, ind_u, tnorm)
 
         if name_model == 'MQR' or name_model == 'intMQR' or name_model == 'lin_regre':
-            weights = modelo[1]
+            weights = model[1]
             return np.dot(new_u, weights)
 
         elif name_model == 'max':
@@ -77,7 +77,7 @@ class Evaluation:
             return aux.reshape(len(aux), 1)
 
         else:  # 'logistic regression'
-            model = modelo[1]
+            model = model[1]
             aux = model.predict(new_u)
             return aux.reshape(len(aux), 1)
 
