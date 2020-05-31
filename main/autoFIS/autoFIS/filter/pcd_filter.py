@@ -82,7 +82,7 @@ def pcd_derived_premises(ref_comb, premises, ux, cbin):
     :param ux: [0.2, 0.01 0.39;
                 0.1  0.08 0.29]
     :param cbin: Binary output
-    :return: [(0,1), (1,2)] --> new_ref_oomb
+    :return: [(0,1), (1,2)] --> new_ref_comb
              [(0,5), (6,9)] --> new_premises
              new_ux
     """
