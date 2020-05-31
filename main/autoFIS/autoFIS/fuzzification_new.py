@@ -1,11 +1,19 @@
-__author__ = 'lthimoteo'
 
+###############################################################################################
+###############################################################################################
+###############################################################################################
+###############################################################################################
+###############################################################################################
+###############################################################################################
+from itertools import compress, chain
 import numpy as np
 import pandas as pd
-from itertools import compress, chain
 import scipy.sparse as sp
 
-class Fuzzification:
+from sklearn.base import BaseEstimator,TransformerMixin
+from sklearn.preprocessing import OneHotEncoder
+
+class FuzzificationNew(BaseEstimator,TransformerMixin):
 
     '''
 
@@ -15,20 +23,60 @@ class Fuzzification:
 
     '''
     
-    def __init__(self,X,categorical_attributes_mask = [], fuzzy_sets_by_attribute = 3, triangle_format = 'normal', enable_negation = False):
+    def __init__(self, n_fuzzy_sets = 3, triangle_format = 'normal'):
         
         
-        self.X = X #array([[1,2,3,4],[2,3,4,5],...])
-        self.categorical_attributes_mask = categorical_attributes_mask or X.shape ==(X.shape[1] * [False]) 
-        self.fuzzy_sets_by_attribute = fuzzy_sets_by_attribute
+        self.n_fuzzy_sets = n_fuzzy_sets
         self.triangle_format = triangle_format
-        self.enable_negation = enable_negation
 
+        self.enable_negation = False
+        # self.categorical_attributes_mask = [] 
+        # self.X = []
         self.uX = []
         self.num_of_antecedents_by_attribute = []  # [3, 2, 3]
         self.antecedents_by_attribute = []                 # [(0,1,2),(3,4),(5,6,7)]
         self.attributes_negation_mask = []              # [True, False, True]
-        self.aux = None
+
+
+    def fit(self,X,categorical_attributes_mask,enable_negation):
+
+        # fuzzify numerical
+        X_numerical = X_sample.loc[:,np.invert(categorical_attributes_mask)]
+
+        min_attributes = X_numerical.min()
+        max_attributes = X_numerical.max()
+
+        if triangle_format == 'tukey':
+            centers = [tukey_centers(x,n_fuzzy_sets) for x in X_numerical.values.T]
+        else:
+            centers = [normal_centers(mini,maxi,n_fuzzy_sets) for mini,maxi  in zip(min_attributes,max_attributes)]
+
+        fuzzy_sets = np.array([build_fuzzy_sets(x,center,n_fuzzy_sets) for x,center in zip(X_numerical.values.T,centers)]).reshape(X_numerical.shape[0],X_numerical.shape[1] * n_fuzzy_sets)
+
+        # fuzzify categorical
+        X_categorical = X_sample.loc[:,categorical_attributes_mask]
+
+        # categories must be provided by the user. In case its empty, it will be calculated automatically (not optimal)
+        categories = [np.unique(x) for x in X_categorical.values.T]
+        categorical_encoder = OneHotEncoder(categories=categories).fit(X_categorical.values)
+        X_categorical_encoded = categorical_encoder.transform(X_categorical.values).toarray()
+
+
+
+    def tukey_centers(self, x,n_fuzzy_sets):
+        return np.percentile(x, np.linspace(0, 100, n_fuzzy_sets).tolist())
+
+    def normal_centers(self, x_min,x_max,n_fuzzy_sets):
+        return np.linspace(x_min, x_max, n_fuzzy_sets)
+
+    def build_fuzzy_sets(self, x,centers,n_fuzzy_sets):
+
+        membership_far_left = self.trapmf(x, [-np.inf, -np.inf, centers[0], centers[1]])
+        membership_far_right = self.trapmf(x, [centers[n_fuzzy_sets - 2], centers[n_fuzzy_sets - 1], np.inf, np.inf])
+        middle_memberships = np.array([self.trimf(x, centers[i:i + n_fuzzy_sets]) for i in range(n_fuzzy_sets - 2)])
+        fuzzy_sets = np.vstack((membership_far_left,middle_memberships,membership_far_right))
+        return fuzzy_sets
+
 
     def build_membership_functions(self):  
         
@@ -39,7 +87,7 @@ class Fuzzification:
             X: data to fuzzify 
             categorical_attributes_mask: array of booleans indicating which attributes are categorical
             triangle_format: 'normal' or 'tukey'
-            fuzzy_sets_by_attribute: number of membership functions per attribute. Generally 3,5 or 7
+            n_fuzzy_sets: number of membership functions per attribute. Generally 3,5 or 7
             enable_negation: boolean to enable creation of membership function negations. 
         '''
 
@@ -56,14 +104,14 @@ class Fuzzification:
                     aux = np.delete(aux, 1, axis=1)
             else:
                 attribute = self.X[:, [attr]]
-                aux = self.triangle_mb(attribute, self.triangle_format, self.fuzzy_sets_by_attribute)
+                aux = self.triangle_mb(attribute, self.triangle_format, self.n_fuzzy_sets)
 
             list_uX.append(aux)
             size_attr.append(aux.shape[1])
         # else:
         #     for attr in range(self.X.shape[1]):
         #         attribute = self.X[:, [attr]]
-        #         aux = self.triangle_mb(attribute, self.triangle_format, self.fuzzy_sets_by_attribute)
+        #         aux = self.triangle_mb(attribute, self.triangle_format, self.n_fuzzy_sets)
         #         list_uX.append(aux)
         #         size_attr.append(aux.shape[1])
 
@@ -86,7 +134,7 @@ class Fuzzification:
         Parameters:
             X: data to fuzzify 
             categorical_attributes_mask: array of booleans indicating which attributes are categorical
-            fuzzy_sets_by_attribute: number of membership functions per attribute. Generally 3,5 or 7
+            n_fuzzy_sets: number of membership functions per attribute. Generally 3,5 or 7
             enable_negation: boolean to enable creation of membership function negations. 
         '''
         
@@ -265,17 +313,5 @@ class Fuzzification:
 
 
 
+class Premises():
 
-###############################################################################################
-###############################################################################################
-###############################################################################################
-###############################################################################################
-###############################################################################################
-###############################################################################################
-
-
-def main():
-    print ('Module 2 <<Fuzzification>>')
-
-if __name__ == '__main__':
-    main()
