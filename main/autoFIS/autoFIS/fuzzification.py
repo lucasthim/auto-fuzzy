@@ -120,6 +120,14 @@ class Fuzzification:
         self.num_of_antecedents_by_attribute = [len(i) for i in total_premises]
         self.attributes_negation_mask = index_premises_negation
         
+        self.index_premises_negation = index_premises_negation
+        self.attrib_survivors_negation = attrib_survivors_negation
+        self.premises_attrib_neg = premises_attrib_neg
+        self.premises_survivors_negation = premises_survivors_negation
+        self.total_premises = total_premises
+        self.ind_neg = ind_neg
+        self.prem_surv = prem_surv
+
         # return self.uX
 
     def trimf(self,x, triangle_points):
