@@ -99,6 +99,7 @@ def support_premises_base_with_neg(ref_attrib, premises, num_premises_by_attrib,
 
 def support_basic_premises(ref_attrib, premises, num_premises_by_attrib, ux,
                              criteria, tolerance, attributes_contain_negation):
+    
     """
     Se eliminan las premisas que no pasen el criterio del area
     :param premises: [(0,1,2)(3,4,5),(6,7,8)]
@@ -106,6 +107,7 @@ def support_basic_premises(ref_attrib, premises, num_premises_by_attrib, ux,
     :param criteria: 'cardinalidade' ou 'frequencia'
     :return:         [(1,2),(3,4,5),(8,)]
     """
+    
     if sum(attributes_contain_negation) != 0:  # At least some attribute was negated
         return support_premises_base_with_neg(ref_attrib, premises, num_premises_by_attrib, ux,
                                                 criteria, tolerance, attributes_contain_negation)
