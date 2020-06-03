@@ -9,28 +9,24 @@ from .filter.pcd_filter import pcd_basic_premises, pcd_derived_premises
 
 
 class Formulation:
-    def __init__(self, ux, num_of_attributes, target_class, tnorm, antecedents_by_attribute, num_of_antecedents_by_attribute, 
-    attributes_negation_mask, premise_max_size, criteria_support, threshold_support, enable_similarity_premises_bases, 
+    def __init__(self, target_class, ux, attribute_is_binary, antecedents_by_attribute, num_of_antecedents_by_attribute, 
+    enable_negation,t_norm, premise_max_size, criteria_support, threshold_support, enable_similarity_premises_bases, 
     enable_similarity_premises_derived, threshold_similarity, enable_pcd_premises_base, enable_pcd_premises_derived):
-        
-        # ------- Received parameters from Fuzzification --------------
-        self.ux = ux
-        self.num_of_attributes = num_of_attributes
-        self.attributes_num_list = range(0,num_of_attributes)
 
+        # ------- Received parameters from Fuzzification --------------
+        self.attribute_is_binary = attribute_is_binary
+        self.negation_enabled = enable_negation
+
+        self.ux = ux
         self.target_class = target_class
-        self.tnorm = []
+        self.tnorm = t_norm
         self.antecedents_by_attribute = antecedents_by_attribute
         self.num_of_antecedents_by_attribute = num_of_antecedents_by_attribute
-        self.attributes_negation_mask = attributes_negation_mask
-        
-
-        # ------- Parameters given by user -----------------------
         self.premise_max_size = premise_max_size 
 
         # Parameters of area filter
         self.criteria_support = criteria_support  # 'cardinalidade relativa', 'frequencia relativa'
-        self.threshold_support = threshold_support  # tolerancia da area
+        self.threshold_support = threshold_support 
         
         # Parameters of overlapping filter
         self.enable_similarity_premises_bases = enable_similarity_premises_bases
@@ -49,7 +45,7 @@ class Formulation:
         
         Parameters:
             premise_max_size:  2,3,4,5
-            tnorm:           'min' or 'prod'
+            tnorm:             'min' or 'prod'
             criteria:
             threshold_area
             enable_overlapping
@@ -101,9 +97,11 @@ class Formulation:
         
         """
 
+        attributes_num_list = range(0,len(self.antecedents_by_attribute))
+        attributes_negation_mask =  np.invert(attribute_is_binary) if self.negation_enabled else len(self.antecedents_by_attribute) * [False]
         # Filter area
-        aux = support_basic_premises(self.attributes_num_list, self.antecedents_by_attribute, self.num_of_antecedents_by_attribute, self.ux,
-                                       self.criteria_support, self.threshold_support, self.attributes_negation_mask)
+        aux = support_basic_premises(attributes_num_list, self.antecedents_by_attribute, self.num_of_antecedents_by_attribute, self.ux,
+                                       self.criteria_support, self.threshold_support, attributes_negation_mask)
         new_ref_attribute, new_premises, new_num_premises_by_attrib, new_ux = aux
 
         # Filter PCD

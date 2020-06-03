@@ -16,7 +16,7 @@ def support_by_attribute(u_attribute, perc_area=0.1, criteria='cardinalidade_rel
 
 
 def support_negated_attribute(u_attribute, perc_area=0.1, criteria='cardinalidade_relativa'):
-    # Se evalua no un vector sino una matriz o sea varias columnas
+
     # u_attribute: numpy, not included part negated
 
     val_min = u_attribute.shape[0] * perc_area
@@ -29,6 +29,7 @@ def support_negated_attribute(u_attribute, perc_area=0.1, criteria='cardinalidad
     else:  # criteria == 'frequencia_relativa'
         aux = u_attribute > 0
         support_premises = aux.sum(axis=0)
+        
     for i in range(len(support_premises)):
         support_premise = support_premises[i]
         if val_min < support_premise < val_max:
@@ -101,11 +102,14 @@ def support_basic_premises(ref_attrib, premises, num_premises_by_attrib, ux,
                              criteria, tolerance, attributes_contain_negation):
     
     """
-    Se eliminan las premisas que no pasen el criterio del area
-    :param premises: [(0,1,2)(3,4,5),(6,7,8)]
-    :param tolerance:       0.1
-    :param criteria: 'cardinalidade' ou 'frequencia'
-    :return:         [(1,2),(3,4,5),(8,)]
+    Eliminate premises that to not pass the area (support) criteria
+    
+    Params:
+    premises: [(0,1,2)(3,4,5),(6,7,8)]
+    tolerance:       0.1
+    criteria: 'cardinalidade' ou 'frequencia'
+    
+    Returnts surviving premises: [(1,2),(3,4,5),(8,)]
     """
     
     if sum(attributes_contain_negation) != 0:  # At least some attribute was negated

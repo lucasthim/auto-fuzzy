@@ -1,134 +1,147 @@
-__author__ = 'lthimoteo'
-
 import numpy as np
 import pandas as pd
-from itertools import compress, chain
-import scipy.sparse as sp
 
-class Fuzzification:
+from sklearn.base import BaseEstimator,TransformerMixin
+from sklearn.preprocessing import OneHotEncoder
+
+class Fuzzification(BaseEstimator,TransformerMixin):
 
     '''
+    Fuzzification module of a Fuzzy Inference System.
 
-    Fuzzification module of a Fuzzy Inference System
-
-    This class is responsible for building the membership functions for an attribute.
-
+    This transformer class is responsible for fitting and transforming the data into membership functions.
     '''
     
-    def __init__(self,X,categorical_attributes_mask = [], fuzzy_sets_by_attribute = 3, triangle_format = 'normal', enable_negation = False):
-        
-        
-        self.X = X #array([[1,2,3,4],[2,3,4,5],...])
-        self.categorical_attributes_mask = categorical_attributes_mask or X.shape ==(X.shape[1] * [False]) 
-        self.fuzzy_sets_by_attribute = fuzzy_sets_by_attribute
+    def __init__(self, n_fuzzy_sets = 3, triangle_format = 'normal',enable_negation = False):
+
+        self.n_fuzzy_sets = n_fuzzy_sets
         self.triangle_format = triangle_format
         self.enable_negation = enable_negation
 
-        self.uX = []
-        self.num_of_antecedents_by_attribute = []  # [3, 2, 3]
-        self.antecedents_by_attribute = []                 # [(0,1,2),(3,4),(5,6,7)]
-        self.attributes_negation_mask = []              # [True, False, True]
-        self.aux = None
+        # self.categorical_attributes_mask = [] 
+        # self.min_attributes = [] 
+        # self.max_attributes = [] 
+        # self.centers = [] 
+        # self.categories = [] 
+        # self.categorical_encoder = [] 
+        # self.uX = []
+        # self.num_of_antecedents_by_attribute = []  # [3, 2, 3]
+        # self.antecedents_by_attribute = []                 # [(0,1,2),(3,4),(5,6,7)]
+        # self.attributes_negation_mask = []              # [True, False, True]
 
-    def build_membership_functions(self):  
-        
+
+    def fit(self,X, is_categorical = None, categories = None):
         '''
-        Build membership functions for attributes
-        
-        Parameters:
-            X: data to fuzzify 
-            categorical_attributes_mask: array of booleans indicating which attributes are categorical
-            triangle_format: 'normal' or 'tukey'
-            fuzzy_sets_by_attribute: number of membership functions per attribute. Generally 3,5 or 7
-            enable_negation: boolean to enable creation of membership function negations. 
+            Fit fuzzification parameters according to dataset.
         '''
 
-        list_uX = []
-        size_attr = []
-        # if self.categorical_attributes_mask:
-        for attr in range(self.X.shape[1]):
-            if self.categorical_attributes_mask[attr]:
-                attribute = pd.DataFrame(self.X[:, [attr]].tolist(), dtype="category")  # print attribute.describe()
-                # Talvez trocar esse get_dummier para um encoding que eu tenha a orientação dos dados.
-                # Ou ver se tem alguma maneira de fazer isso no get_dummies
-                aux = pd.get_dummies(attribute).values
-                if aux.shape[1] == 2:  # new IF
-                    aux = np.delete(aux, 1, axis=1)
+        X = X if type(X) == pd.DataFrame else pd.DataFrame(X)
+        fuzzy_params = pd.DataFrame(columns = ['min','max','centers','is_categorical','is_binary','categories'], index=list(range(X.shape[1])))
+        is_categorical = is_categorical or X.shape[1] * [False]
+        
+        X_numerical = X.loc[:,np.invert(is_categorical)]
+        if self.triangle_format == 'tukey':
+            fuzzy_params.loc[np.invert(is_categorical),'centers'] = [self.tukey_centers(x,self.n_fuzzy_sets) for x in X_numerical.values.T]
+        else:
+            mins = X_numerical.min()
+            maxs = X_numerical.max()
+            fuzzy_params.loc[np.invert(is_categorical),'min'] = mins.values
+            fuzzy_params.loc[np.invert(is_categorical),'max'] = maxs.values
+            fuzzy_params.loc[np.invert(is_categorical),'centers'] = [self.normal_centers(mini,maxi,self.n_fuzzy_sets) for mini,maxi  in zip(mins,maxs)]
+
+        categories = categories or [np.unique(x) for x in X.loc[:,is_categorical].values.T]
+        fuzzy_params.loc[is_categorical,'categories'] = categories
+
+        fuzzy_params['is_binary'] = False
+        fuzzy_params.loc[is_categorical,'is_binary'] = [x.shape[0] <= 2 for x in categories] if categories is not None else False
+        fuzzy_params['is_categorical'] = is_categorical
+
+        self.fuzzy_params = fuzzy_params
+        
+
+    def transform(self,X):
+        
+        X = X if type(X) == pd.DataFrame else pd.DataFrame(X)
+        uX = []
+        premise_ref = 0
+        fuzzy_premises = []
+        num_fuzzy_premises = []
+
+        for i in range(X.shape[1]):
+            
+            params = self.fuzzy_params.iloc[i]
+            x = X.iloc[:,i].values
+
+            if params['is_categorical']:
+
+                sets = OneHotEncoder(categories = [params['categories']],drop='if_binary').fit_transform(x.ravel().reshape(-1,1)).toarray()
+                if params['is_binary']:
+                    sets = sets.ravel()
             else:
-                attribute = self.X[:, [attr]]
-                aux = self.triangle_mb(attribute, self.triangle_format, self.fuzzy_sets_by_attribute)
+                sets = self.build_fuzzy_sets(x,params['centers'],self.n_fuzzy_sets)
 
-            list_uX.append(aux)
-            size_attr.append(aux.shape[1])
-        # else:
-        #     for attr in range(self.X.shape[1]):
-        #         attribute = self.X[:, [attr]]
-        #         aux = self.triangle_mb(attribute, self.triangle_format, self.fuzzy_sets_by_attribute)
-        #         list_uX.append(aux)
-        #         size_attr.append(aux.shape[1])
+            if self.enable_negation and not params['is_binary']:
+                sets = np.concatenate((sets, 1 - sets), axis=1)
 
-        # list_uX é um tensor: atributos x samples x sets
-        self.aux = list_uX
-        self.uX = np.hstack(list_uX)
-        self.num_of_antecedents_by_attribute = size_attr
-        self.antecedents_by_attribute = self.gather_columnspremises_by_attribute(range(self.uX.shape[1]), size_attr)
-        self.attributes_negation_mask = self.X.shape[1] * [False]
+            num_fuzzy_sets = 1 if sets.ndim == 1 else sets.shape[1]
+            num_fuzzy_premises.append(num_fuzzy_sets)
+            # self.fuzzy_params.loc[i,'num_fuzzy_sets'] = num_fuzzy_sets
+            fuzzy_premises.append(tuple(range(premise_ref,premise_ref + num_fuzzy_sets)))
+            premise_ref += num_fuzzy_sets
+            
+            uX.append(sets)
+        # self.fuzzy_params['fuzzy_sets'] = fuzzy_premises
+        uX = np.hstack(uX)
+        return uX,fuzzy_premises,num_fuzzy_premises
 
-        if self.enable_negation:
-            self.add_negation()
-        # return self.uX
+    def tukey_centers(self, x,n_fuzzy_sets):
+        return np.percentile(x, np.linspace(0, 100, n_fuzzy_sets).tolist())
+
+    def normal_centers(self, x_min,x_max,n_fuzzy_sets):
+        return np.linspace(x_min, x_max, n_fuzzy_sets)
+
+    def build_fuzzy_sets(self, x,centers,n_fuzzy_sets):
+
+        membership_far_left = self.trapmf(x, [-np.inf, -np.inf, centers[0], centers[1]])
+        membership_far_right = self.trapmf(x, [centers[n_fuzzy_sets - 2], centers[n_fuzzy_sets - 1], np.inf, np.inf])
+        middle_memberships = np.array([self.trimf(x, centers[i:i + n_fuzzy_sets]) for i in range(n_fuzzy_sets - 2)])
+        fuzzy_sets = np.vstack((membership_far_left,middle_memberships,membership_far_right)).T
+        return fuzzy_sets
 
 
-    def add_negation(self):
+    def triangle_mb(self,y, triangle_format = 'normal', n_fuzzy_sets = 3):
 
-        '''
-        Build membership functions  with negation for attributes
+        """
+        Build triangular membership functions
+        
         Parameters:
-            X: data to fuzzify 
-            categorical_attributes_mask: array of booleans indicating which attributes are categorical
-            fuzzy_sets_by_attribute: number of membership functions per attribute. Generally 3,5 or 7
-            enable_negation: boolean to enable creation of membership function negations. 
-        '''
-        
-        num_attributes = len(self.categorical_attributes_mask)
-        num_col = sum(self.num_of_antecedents_by_attribute) 
+            
+            y: Attribute
+            triangle_format: 'normal' or 'tukey'
+            n_fuzzy_sets: number of fuzzy sets
 
-        attr_with_more_than_2_mf = [False if i < 3 else True for i in self.num_of_antecedents_by_attribute]
-        index_premises_negation = [True if (attr_with_more_than_2_mf[i] + 1 - self.categorical_attributes_mask[i]) != 0
-                                   else False for i in range(len(self.categorical_attributes_mask))]
-        attrib_survivors_negation = list(compress(range(num_attributes), index_premises_negation))
+        Return: array with membership functions
+        """
 
-        premises_attrib_neg = self.gather_columnspremises_by_attribute(range(num_col, 2*num_col),
-                                                                  list(pd.Series(self.num_of_antecedents_by_attribute)
-                                                                       [attrib_survivors_negation]))  # Modified line
-        premises_survivors_negation = list(compress(premises_attrib_neg, list(pd.Series(self.num_of_antecedents_by_attribute)
-                                                                              [attrib_survivors_negation])))  # Modified line
+        if triangle_format == 'tukey':
+            center = np.percentile(y, np.linspace(0, 100, n_fuzzy_sets).tolist())
+        else:
+            ymin = min(y)
+            ymax = max(y)
+            center = np.linspace(ymin, ymax, n_fuzzy_sets)
 
-        total_premises = []
-        for i in range(num_attributes):
-            prem_attr_i = self.antecedents_by_attribute[i]
-            if i in attrib_survivors_negation:
-                aux_index = attrib_survivors_negation.index(i)
-                prem_attr_i += premises_survivors_negation[aux_index]
-            total_premises.append(prem_attr_i)
-        
-        prem_surv = pd.Series(self.antecedents_by_attribute)[attrib_survivors_negation] 
-        ind_neg = [i for sub in list(prem_surv) for i in sub] 
-        
-        self.uX = np.concatenate((self.uX, 1. - self.uX[:, ind_neg]), axis=1)
-        self.antecedents_by_attribute = total_premises[:]
-        self.num_of_antecedents_by_attribute = [len(i) for i in total_premises]
-        self.attributes_negation_mask = index_premises_negation
-        
-        self.index_premises_negation = index_premises_negation
-        self.attrib_survivors_negation = attrib_survivors_negation
-        self.premises_attrib_neg = premises_attrib_neg
-        self.premises_survivors_negation = premises_survivors_negation
-        self.total_premises = total_premises
-        self.ind_neg = ind_neg
-        self.prem_surv = prem_surv
+        membership_far_left = self.trapmf(y, [-np.inf, -np.inf, center[0], center[1]])
+        membership_far_right = self.trapmf(y, [center[n_fuzzy_sets - 2], center[n_fuzzy_sets - 1], np.inf, np.inf])
 
-        # return self.uX
+        fuzzy_sets = np.array(membership_far_left)
+        for i in range(n_fuzzy_sets - 2):
+            aux = self.trimf(y, center[i:i + n_fuzzy_sets])
+            fuzzy_sets = np.append(fuzzy_sets, aux, 1)
+
+        fuzzy_sets = np.append(fuzzy_sets, membership_far_right, 1)
+
+        return fuzzy_sets
+
 
     def trimf(self,x, triangle_points):
         """
@@ -211,76 +224,6 @@ class Fuzzification:
 
         y = np.minimum(y1, y2)
         return y
-
-
-    def triangle_mb(self,y, triangle_format = 'normal', n_fuzzy_sets = 3):
-
-        """
-        Build triangular membership functions
-        
-        Parameters:
-            
-            y: Attribute
-            triangle_format: 'normal' or 'tukey'
-            n_fuzzy_sets: number of fuzzy sets
-
-        Return: array with membership functions
-        """
-
-        if triangle_format == 'tukey':
-            center = np.percentile(y, np.linspace(0, 100, n_fuzzy_sets).tolist())
-            # print(center)
-        else:
-            ymin = min(y)
-            ymax = max(y)
-            center = np.linspace(ymin, ymax, n_fuzzy_sets)
-
-        membership_far_left = self.trapmf(y, [-np.inf, -np.inf, center[0], center[1]])
-        membership_far_right = self.trapmf(y, [center[n_fuzzy_sets - 2], center[n_fuzzy_sets - 1], np.inf, np.inf])
-
-        fuzzy_sets = np.array(membership_far_left)
-        for i in range(n_fuzzy_sets - 2):
-            aux = self.trimf(y, center[i:i + n_fuzzy_sets])
-            fuzzy_sets = np.append(fuzzy_sets, aux, 1)
-
-        fuzzy_sets = np.append(fuzzy_sets, membership_far_right, 1)
-
-        return fuzzy_sets
-
-
-    def gather_columnspremises_by_attribute(self, premises_list, sizes_attributes):
-        
-        """
-        Gather columnspremises by each attribute
-        
-        Parameters:
-            
-            premises_list: Array with number of premises [0,1,2,3...,7]
-            
-            sizes_attributes: Array with membership functions per attribute [3, 2, 3]
-            
-            n_fuzzy_sets: number of fuzzy sets
-            
-        Return: array with each premise grouped in a tuple [(0,1,2), (3,4), (5,6,7)]
-        """
-
-        new_premises_list = []
-        ref = 0
-        for i in sizes_attributes:
-            new_premises_list.append(tuple(premises_list[ref:ref+i]))
-            ref += i
-        return new_premises_list
-
-
-
-
-###############################################################################################
-###############################################################################################
-###############################################################################################
-###############################################################################################
-###############################################################################################
-###############################################################################################
-
 
 def main():
     print ('Module 2 <<Fuzzification>>')
