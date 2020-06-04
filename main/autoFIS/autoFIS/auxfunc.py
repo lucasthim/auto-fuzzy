@@ -116,7 +116,7 @@ def int_prem_nivel_m(ind_P, P, m, tnorm='prod'):
     return l1, A
 
 
-def int_premisas(origin_P, P, m, t_norm='prod'):
+def int_premises(origin_P, P, m, t_norm='prod'):
     new_indP = []
     new_P = []
     for i in range(1, m + 1):

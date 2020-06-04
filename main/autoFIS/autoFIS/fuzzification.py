@@ -18,17 +18,6 @@ class Fuzzification(BaseEstimator,TransformerMixin):
         self.triangle_format = triangle_format
         self.enable_negation = enable_negation
 
-        # self.categorical_attributes_mask = [] 
-        # self.min_attributes = [] 
-        # self.max_attributes = [] 
-        # self.centers = [] 
-        # self.categories = [] 
-        # self.categorical_encoder = [] 
-        # self.uX = []
-        # self.num_of_antecedents_by_attribute = []  # [3, 2, 3]
-        # self.antecedents_by_attribute = []                 # [(0,1,2),(3,4),(5,6,7)]
-        # self.attributes_negation_mask = []              # [True, False, True]
-
 
     def fit(self,X, is_categorical = None, categories = None):
         '''

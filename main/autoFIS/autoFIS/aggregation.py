@@ -4,33 +4,32 @@ __author__ = 'jparedes'
 import numpy as np
 from itertools import compress
 from sklearn import linear_model  # to use LogisticRegression
-from .auxfunc import calculate_cd_transpose, iter_beta, int_premisas
+from .auxfunc import calculate_cd_transpose, iter_beta, int_premises
 
 
 class Aggregation:
 
-    def __init__(self, association_rules, target_class_one_hot):
+    def __init__(self, association_rules):
         
         """
         :param association_rules:
-                [[premisas_c1 uC1], [premisas_c2 uC2], ....]
+                [[premises_c1 uC1], [premises_c2 uC2], ....]
         """
 
         self.association_rules = association_rules
-        self.target_class_one_hot = target_class_one_hot
-        self.association_method_mapper = {"max": self.max_method,
+        self.aggregation_method_mapper = {"max": self.max_method,
                                  "LinearModel": self.linear,
                                  "LogRegression": self.logregression,
                                  "MQR": self.mqr,
                                  "intMQR": self.int_mqr}
 
-    def aggregate_rules(self, method='MQR', tnorm_int_mqr='min'):
-        data_to_aggregate = [self.association_rules, self.target_class_one_hot]
+    def aggregate_rules(self, target_class_one_hot, method='MQR', tnorm_int_mqr='min',):
+        data_to_aggregate = [self.association_rules, target_class_one_hot]
         if method == "intMQR":
             data_to_aggregate += [2, tnorm_int_mqr]
 
         # Choose a method and return the estimation and summary of model
-        return self.association_method_mapper[method](data_to_aggregate)
+        return self.aggregation_method_mapper[method](data_to_aggregate)
 
     @staticmethod
     def linear(data_to_aggregate):
@@ -142,7 +141,7 @@ class Aggregation:
 
             indexes_o = indexes_and_premises_by_class[i][0]
             uo_premises = indexes_and_premises_by_class[i][1]
-            indexes, u_premises = int_premisas(indexes_o, uo_premises, m, tnorm)
+            indexes, u_premises = int_premises(indexes_o, uo_premises, m, tnorm)
 
             betas = iter_beta(u_premises, class_bin)
 
@@ -161,41 +160,7 @@ class Aggregation:
 
 def main():
     pass
-    # p1 = [(2,), (5, 6), (4, 8), (7,), (9, 11)]
-    # a1 = np.array([[0.1000, 0.0300, 0.2000, 0.1300, 0.0060],
-    #                [0.0100, 0.0020, 0.0100, 0.4000, 0.0700],
-    #                [0.5000, 0.0500, 0.0200, 0.0040, 0.0300],
-    #                [0.0200, 0.0500, 0.0600, 0.3000, 0.7000],
-    #                [0.3000, 0.1000, 0.0200, 0.2000, 0.3000],
-    #                [0.0600, 0.2000, 0.0700, 0.0900, 0.4000],
-    #                [0.2000, 0.0600, 0.7000, 0.2500, 0.2300]])
 
-    # p2 = [(7,), (12, 6), (3, 4), (1,), (2, 11), (13,), (15, 17), (20, 25), (32, 35), (39,)]
-    # a2 = np.array([[0.0200, 0.1000, 0.0200, 0.0300, 0.0500, 0.0400, 0.1500, 0.3300, 0.1200, 0.2400],
-    #                [0.1000, 0.0200, 0.0240, 0.0670, 0.0780, 0.0450, 0.0340, 0.0670, 0.0100, 0.0300],
-    #                [0.1200, 0.4230, 0.1420, 0.7300, 0.4500, 0.0400, 0.0500, 0.0300, 0.0200, 0.1740],
-    #                [0.0100, 0.0020, 0.0154, 0.0370, 0.1800, 0.4500, 0.0400, 0.7000, 0.0100, 0.1000],
-    #                [0.3000, 0.0120, 0.0154, 0.3700, 0.8100, 0.1500, 0.4400, 0.4700, 0.2310, 0.7810],
-    #                [0.0400, 0.0780, 0.0154, 0.0370, 0.1780, 0.4500, 0.2040, 0.8070, 0.0410, 0.3100],
-    #                [0.0800, 0.6200, 0.0154, 0.7000, 0.1800, 0.1060, 0.0140, 0.1070, 0.1110, 0.2210]])
-
-    # target_class_one_hot = np.array([[1, 0],
-    #                  [1, 0],
-    #                  [0, 1],
-    #                  [1, 0],
-    #                  [0, 1],
-    #                  [0, 1],
-    #                  [1, 0]])
-
-    # libom = [[p1, a1], [p2, a2]]
-    # output = aggregate_rules(libom, target_class_one_hot)
-
-    # print (output.aggregate_rules('linear'))
-    # print (output.aggregate_rules('LogRegression'))
-    # print (output.aggregate_rules('MQR'))
-    # print (output.aggregate_rules('intMQR', 'min'))
-    # print (output.aggregate_rules('max'))
-    # print (5)
 
 if __name__ == '__main__':
     main()
