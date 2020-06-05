@@ -1,35 +1,23 @@
-from .lecture import Lecture
 from .fuzzification import Fuzzification
-from .formul.formulation import Formulation
+from .formulation import Formulation
 from .association import Association
 from .aggregation import Aggregation
-from .decisions import Decisions
-from .evaluation import Evaluation
+from .decision import Decision
+# from .evaluation import Evaluation
 
 
 class AutoFISClassifier():
 
-    def __init__(self):
-        self.reading_module = None
-        self.fuzzyfication = None
-        self.formulation = None
-        self.association = None
-        self.aggregation = None
-        self.decision = None
-        self.evaluation = None
-        self.metrics_train = None
-        self.metrics_test = None
-        self.info_data = None
+    def __init__(self,categorical_attributes):
 
 
         # -------------------------
         # Fuzzyfication parameters
         # -------------------------
-        self.categorical_attributes_mask = []
-        self.triangular_fuzzification_type = "tukey"  # "tukey" or "normal"
-        self.num_partitions_by_attribute = 3  # 3, 5, 7
-        self.t_norm = "prod"  # "min" or "prod"
-        self.is_enable_negation = 1  # 0 or 1
+        self.categorical_attributes = [False, False, False, False]
+        self.triangle_format = 'normal'  # "tukey", "normal"
+        self.n_fuzzy_sets = 5  # 3, 5, 7
+        self.enable_negation = False
 
         # -------------------------
         # Formulation parameters
@@ -45,7 +33,7 @@ class AutoFISClassifier():
         self.overlapping_threshold = 0.95
 
         # -------------------------
-        # Association: ex Splitting
+        # Association:
         # -------------------------
         self.method_association = "CD"  # "MQR", "PMQR", "CD", "PCD", "freq"
 
@@ -54,8 +42,11 @@ class AutoFISClassifier():
         # -------------------------
         self.method_aggregation = "MQR"  # "MQR", "PMQR", "intMQR", "CD", "PCD", "max"
 
-        # Grouping parameters:
-        self.parameters = []
+        self.fuzzyfication = None
+        self.formulation = None
+        self.association = None
+        self.aggregation = None
+        self.decision = None
 
 
     def set_parameters(self,categorical_attributes_mask):
