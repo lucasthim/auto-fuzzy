@@ -1,5 +1,3 @@
-__author__ = 'jparedes'
-
 import numpy as np
 from itertools import combinations, product, chain
 

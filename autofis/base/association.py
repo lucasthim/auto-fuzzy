@@ -1,10 +1,7 @@
-__author__ = 'jparedes'
-
-# -*- coding: utf-8 -*-
 from numpy import tile, spacing, zeros, concatenate
 from itertools import compress
 
-from .auxfunc import iter_beta
+from .utils import iter_beta
 
 class Association:
     def __init__(self, tree, target_class_one_hot):

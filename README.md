@@ -1,2 +1,4 @@
 # auto-fuzzy
-AutoFIS and more
+AutoFIS Classifier
+
+
