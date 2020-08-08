@@ -10,31 +10,39 @@ from sklearn.preprocessing import OneHotEncoder
 
 class AutoFISClassifier():
 
-    def __init__(self,categorical_attributes = None,triangle_format = 'normal',n_fuzzy_sets = 5,enable_negation = False,
+    def __init__(self,categorical_attributes:list,triangle_format:str = 'normal',n_fuzzy_sets = 5,enable_negation = False,
                 premise_max_size = 2,t_norm = 'prod',criteria_support = 'cardinalidade_relativa',area_threshold = 0.05,
                 enable_pcd_premises_base = True, enable_pcd_premises_derived = True,
                 enable_similarity_premises_bases = True, enable_similarity_premises_derived = True,
                 threshold_similarity = 0.95, association_method = 'MQR', aggregation_method = 'MQR'):
 
 
-        '''
+        """
         Automatic Synthesis of Fuzzy Inference Systems for Classification
+
         Proposed by Paredes, J. et al
+
         DOI: 10.1007/978-3-319-40596-4_41
-        Available at: https://www.researchgate.net/publication/303901120_Automatic_Synthesis_of_Fuzzy_Inference_Systems_for_Classification
+        
+        Available at: https://www.researchgate.net/publication/303901120_Automatic_Synthesis_of_Fuzzy_Inference_Systems_for_Classification 
 
         This class encapsulates all the steps for the AutoFIS Classifier.
-
-
-        Parameters
+        
+        Parameters:
         ----------
-
-
+        categorical_attributes: List of booleans indicating which attributes of the dataset are categorical. Ex: `[True, False, True, False]`
+        
+        triangle_format: Format of the fuzzy set. Options: `'normal','tukey'`
+        
         Attributes
         ----------
 
+        Methods
+        ----------
 
-        '''
+        fit: Fit the autoFIS model with given matrices X,y
+
+        """
 
         if categorical_attributes is None:
             raise ValueError('categorical_attributes must be set by the user.')
@@ -73,11 +81,11 @@ class AutoFISClassifier():
         self.num_classes = y_one_hot.shape[1]
         self.percentage_of_classes = y_one_hot.sum(axis = 0) / y_one_hot.shape[0]
         
-        self.uX,self.fuzzy_premises,self.num_fuzzy_premises = self.fuzzify(X)
-        self.tree = self.formulate_premises(y_one_hot)
-        self.association_rules = self.associate_rules(y_one_hot)
-        self.aggregation_rules, self.estimation_classes = self.aggregate_rules(y_one_hot)
-        self.decision_maker = self.decision_of_rules()
+        self.uX,self.fuzzy_premises,self.num_fuzzy_premises = self._fuzzify(X)
+        self.tree = self._formulate_premises(y_one_hot)
+        self.association_rules = self._associate_rules(y_one_hot)
+        self.aggregation_rules, self.estimation_classes = self._aggregate_rules(y_one_hot)
+        self.decision_maker = self._decision_of_rules()
 
 
     def predict(self,X):
@@ -87,7 +95,7 @@ class AutoFISClassifier():
         y_pred = self.y_encoder.inverse_transform(y_pred_one_hot)
         return y_pred
 
-    def fuzzify(self,X):
+    def _fuzzify(self,X):
     
         fuzzification_params = {
         'triangle_format' : self.triangle_format,
@@ -105,7 +113,7 @@ class AutoFISClassifier():
 
         return self.fuzzifier.transform(X)
 
-    def formulate_premises(self,y_train_one_hot):
+    def _formulate_premises(self,y_train_one_hot):
 
         
         formulation_params = {
@@ -152,7 +160,7 @@ class AutoFISClassifier():
                 # tree, arb = arb, tree
         return tree
 
-    def associate_rules(self,y_train_one_hot):
+    def _associate_rules(self,y_train_one_hot):
         self.associator = Association(self.tree, y_train_one_hot)
         association_rules = self.associator.build_association_rules(self.association_method)
         self.validate_association_rules(association_rules)
@@ -173,11 +181,11 @@ class AutoFISClassifier():
                             "It's not possible to continue to the next step."
                             "\nTry to change the parameters of the model.")
 
-    def aggregate_rules(self,y_train_one_hot):
+    def _aggregate_rules(self,y_train_one_hot):
 
         #TODO: Remove import auxfunc and put everything in one class, in case it is not used anywhere else.
         self.aggregator = Aggregation(self.association_rules)
-        aggregation_rules,estimation_classes  = self.aggregator.aggregate_rules(y_train_one_hot, self.aggregation_method)
+        aggregation_rules,estimation_classes  = self.aggregator._aggregate_rules(y_train_one_hot, self.aggregation_method)
         self.validate_aggregation_rules(aggregation_rules)
         
         if self.verbose:
@@ -198,7 +206,7 @@ class AutoFISClassifier():
                             "It's not possible to continue to the next step."
                             "\nTry to change the parameters of the model.")
 
-    def decision_of_rules(self):
+    def _decision_of_rules(self):
         decision_maker = Decision(self.aggregation_rules, self.percentage_of_classes)
         if self.verbose:
             print('Done with Decision')

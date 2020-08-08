@@ -20,8 +20,9 @@ class Fuzzification(BaseEstimator,TransformerMixin):
 
 
     def fit(self,X, is_categorical = None, categories = None):
+
         '''
-            Fit fuzzification parameters according to dataset.
+            Fit fuzzification parameters according to dataset X.
         '''
 
         X = X if type(X) == pd.DataFrame else pd.DataFrame(X)
@@ -72,7 +73,7 @@ class Fuzzification(BaseEstimator,TransformerMixin):
             if self.enable_negation and not params['is_binary']:
                 sets = np.concatenate((sets, 1 - sets), axis=1)
 
-            num_fuzzy_sets = 1 if sets.ndim == 1 else sets.shape[1]
+            num_fuzzy_sets = sets.shape[1] if sets.ndim != 1 else 1
             num_fuzzy_premises.append(num_fuzzy_sets)
             # self.fuzzy_params.loc[i,'num_fuzzy_sets'] = num_fuzzy_sets
             fuzzy_premises.append(tuple(range(premise_ref,premise_ref + num_fuzzy_sets)))
@@ -104,12 +105,17 @@ class Fuzzification(BaseEstimator,TransformerMixin):
         Build triangular membership functions
         
         Parameters:
-            
-            y: Attribute
-            triangle_format: 'normal' or 'tukey'
-            n_fuzzy_sets: number of fuzzy sets
+        ----------
+        y: Attribute list
 
-        Return: array with membership functions
+        triangle_format: 'normal' or 'tukey'
+        
+        n_fuzzy_sets: number of fuzzy sets
+
+        Returns: 
+        ---------
+
+        Array with membership functions
         """
 
         if triangle_format == 'tukey':
