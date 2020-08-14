@@ -4,13 +4,13 @@ from ..base.association import Association
 from ..base.aggregation import Aggregation
 from ..base.decision import Decision
 
-
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.base import BaseEstimator,ClassifierMixin
 
-class AutoFISClassifier():
+class AutoFISClassifier(BaseEstimator,ClassifierMixin):
 
-    def __init__(self,categorical_attributes:list,triangle_format:str = 'normal',n_fuzzy_sets = 5,enable_negation = False,
+    def __init__(self,triangle_format:str = 'normal',n_fuzzy_sets = 5,enable_negation = False,
                 premise_max_size = 2,t_norm = 'prod',criteria_support = 'cardinalidade_relativa',area_threshold = 0.05,
                 enable_pcd_premises_base = True, enable_pcd_premises_derived = True,
                 enable_similarity_premises_bases = True, enable_similarity_premises_derived = True,
@@ -27,32 +27,33 @@ class AutoFISClassifier():
         Available at: https://www.researchgate.net/publication/303901120_Automatic_Synthesis_of_Fuzzy_Inference_Systems_for_Classification 
 
         This class encapsulates all the steps for the AutoFIS Classifier.
-        
+
         Parameters:
         ----------
-        categorical_attributes: List of booleans indicating which attributes of the dataset are categorical. Ex: `[True, False, True, False]`
-        
+
         triangle_format: Format of the fuzzy set. Options: `'normal','tukey'`
-        
+
+
         Attributes
         ----------
+        
+        uX_: matrix with the fuzzified features.
+
+        tree_: tree created with premises and rules.
+
 
         Methods
         ----------
 
         fit: Fit the autoFIS model with given matrices X,y
 
+        predict: Make predictions based on the fitted model.
+
         """
 
-        if categorical_attributes is None:
-            raise ValueError('categorical_attributes must be set by the user.')
-            return;
-
-        self.categorical_attributes = categorical_attributes
         self.triangle_format = triangle_format  # "tukey", "normal"
         self.n_fuzzy_sets = n_fuzzy_sets  # 3, 5, 7
         self.enable_negation = enable_negation
-
 
         # Formulation parameters
         self.premise_max_size = premise_max_size
@@ -74,25 +75,48 @@ class AutoFISClassifier():
 
 
 
-    def fit(self,X,y, verbose = 0):
+    def fit(self,X,y = None, categorical_attributes:list = None, verbose = 0):
+
+        """
+
+        Parameters
+        ----------
+        X: dataframe or array containing the input features to fit the model.
+
+        y: array containing the target.
+
+        categorical_attributes: List of booleans indicating which attributes of the dataset are categorical. Ex: `[True, False, True, False]`
+
+        Returns
+        ---------
+        self estimator
+        """
+
+        if categorical_attributes is None:
+            raise ValueError('categorical_attributes must be set by the user.')
+        # TODO: Check inputs here
+
+        self.categorical_attributes = categorical_attributes
         self.verbose = verbose
-        self.y_encoder = OneHotEncoder(categories = [np.unique(y)], drop='if_binary')
-        y_one_hot = self.y_encoder.fit_transform(y.reshape(-1, 1)).toarray()
-        self.num_classes = y_one_hot.shape[1]
-        self.percentage_of_classes = y_one_hot.sum(axis = 0) / y_one_hot.shape[0]
+
+        self.y_encoder_ = OneHotEncoder(categories = [np.unique(y)], drop='if_binary')
+        y_one_hot = self.y_encoder_.fit_transform(y.reshape(-1, 1)).toarray()
+        self.num_classes_ = y_one_hot.shape[1]
+        self.percentage_of_classes_ = y_one_hot.sum(axis = 0) / y_one_hot.shape[0]
         
-        self.uX,self.fuzzy_premises,self.num_fuzzy_premises = self._fuzzify(X)
-        self.tree = self._formulate_premises(y_one_hot)
-        self.association_rules = self._associate_rules(y_one_hot)
-        self.aggregation_rules, self.estimation_classes = self._aggregate_rules(y_one_hot)
-        self.decision_maker = self._decision_of_rules()
+        self.uX_,self.fuzzy_premises_,self.num_fuzzy_premises_ = self._fuzzify(X)
+        self.tree_ = self._formulate_premises(y_one_hot)
+        self.association_rules_ = self._associate_rules(y_one_hot)
+        self.aggregation_rules_, self.estimation_classes_ = self._aggregate_rules(y_one_hot)
+        self.decision_maker_ = self._decision_of_rules()
+        return self
 
 
     def predict(self,X):
 
         uX_pred,_,_ = self.fuzzifier.transform(X)
-        y_pred_one_hot = self.decision_maker.predict(uX_pred,self.t_norm)
-        y_pred = self.y_encoder.inverse_transform(y_pred_one_hot)
+        y_pred_one_hot = self.decision_maker_.predict(uX_pred,self.t_norm)
+        y_pred = self.y_encoder_.inverse_transform(y_pred_one_hot)
         return y_pred
 
     def _fuzzify(self,X):
@@ -105,7 +129,6 @@ class AutoFISClassifier():
 
         self.fuzzifier = Fuzzification(**fuzzification_params)
         self.fuzzifier.fit(X,is_categorical = self.categorical_attributes)
-        # TODO: put fuzzy_premises and num_fuzzy_premises to be calculated INSIDE the formulation step. Not in the fuzzification step.
 
         if self.verbose:
             print('Done with Fuzzification')
@@ -117,10 +140,10 @@ class AutoFISClassifier():
 
         
         formulation_params = {
-        'antecedents_by_attribute': self.fuzzy_premises,
-        'num_of_antecedents_by_attribute': self.num_fuzzy_premises,
+        'antecedents_by_attribute': self.fuzzy_premises_,
+        'num_of_antecedents_by_attribute': self.num_fuzzy_premises_,
         'attribute_is_binary': self.fuzzifier.fuzzy_params['is_binary'],
-        'ux': self.uX, 
+        'ux': self.uX_, 
         'target_class': y_train_one_hot,
         'enable_negation': self.enable_negation,
         't_norm': self.t_norm,
@@ -156,12 +179,10 @@ class AutoFISClassifier():
                                 "\nTry to change the parameters of the model.")
             else:
                 tree = [i for i in tree if i[0]]
-                # arb = [i for i in self.tree if i[0]]
-                # tree, arb = arb, tree
         return tree
 
     def _associate_rules(self,y_train_one_hot):
-        self.associator = Association(self.tree, y_train_one_hot)
+        self.associator = Association(self.tree_, y_train_one_hot)
         association_rules = self.associator.build_association_rules(self.association_method)
         self.validate_association_rules(association_rules)
         
@@ -176,7 +197,7 @@ class AutoFISClassifier():
 
     def validate_association_rules(self,association_rules):
         status = [0 if not i[0] else 1 for i in association_rules]
-        if sum(status) != self.num_classes:
+        if sum(status) != self.num_classes_:
             raise ValueError("Error in Association. Some classes did not get premises. "
                             "It's not possible to continue to the next step."
                             "\nTry to change the parameters of the model.")
@@ -184,8 +205,8 @@ class AutoFISClassifier():
     def _aggregate_rules(self,y_train_one_hot):
 
         #TODO: Remove import auxfunc and put everything in one class, in case it is not used anywhere else.
-        self.aggregator = Aggregation(self.association_rules)
-        aggregation_rules,estimation_classes  = self.aggregator._aggregate_rules(y_train_one_hot, self.aggregation_method)
+        self.aggregator = Aggregation(self.association_rules_)
+        aggregation_rules,estimation_classes  = self.aggregator.aggregate_rules(y_train_one_hot, self.aggregation_method)
         self.validate_aggregation_rules(aggregation_rules)
         
         if self.verbose:
@@ -201,13 +222,13 @@ class AutoFISClassifier():
 
     def validate_aggregation_rules(self,aggregation_rules):
         status = [0 if not i[0] else 1 for i in aggregation_rules]
-        if sum(status) != self.num_classes:
+        if sum(status) != self.num_classes_:
             raise ValueError("Error in Aggregation. Some classes did not get premises. "
                             "It's not possible to continue to the next step."
                             "\nTry to change the parameters of the model.")
 
     def _decision_of_rules(self):
-        decision_maker = Decision(self.aggregation_rules, self.percentage_of_classes)
+        decision_maker = Decision(self.aggregation_rules_, self.percentage_of_classes_)
         if self.verbose:
             print('Done with Decision')
             print('-------------------------')
