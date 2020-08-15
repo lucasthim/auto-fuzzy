@@ -22,7 +22,7 @@ obj2.build_uX("normal", 3)
 # -------------------------
 ordem_max_premises = 2
 # Area filter parameters:
-criteria_area = "cardinalidade_relativa"  # "cardinalidade_relativa", "frequencia_relativa"
+criteria_area = 'cardinality'  # 'cardinality', 'frequency'
 area_threshold = 0.050
 # PCD filter parameter:
 is_enable_pcd = [1, 1]

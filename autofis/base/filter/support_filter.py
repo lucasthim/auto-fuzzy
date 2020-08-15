@@ -4,18 +4,18 @@ import numpy as np  # creo no es necesario en casos como np.sum(x)
 from itertools import compress, chain
 
 
-def support_by_attribute(u_attribute, perc_area=0.1, criteria='cardinalidade_relativa'):
+def support_by_attribute(u_attribute, perc_area=0.1, criteria='cardinality'):
     # Se evalua no un vector sino una matriz o sea varias columnas
     # u_attribute es un numpy
-    if criteria == 'cardinalidade_relativa':
+    if criteria == 'cardinality':
         logica = u_attribute.sum(axis=0) > u_attribute.shape[0] * perc_area
-    else:  # criteria == 'frequencia_relativa'
+    else:  # criteria == 'frequency'
         aux = u_attribute > 0
         logica = aux.sum(axis=0) > aux.shape[0] * perc_area
     return logica.tolist()
 
 
-def support_negated_attribute(u_attribute, perc_area=0.1, criteria='cardinalidade_relativa'):
+def support_negated_attribute(u_attribute, perc_area=0.1, criteria='cardinality'):
 
     # u_attribute: numpy, not included part negated
 
@@ -24,9 +24,9 @@ def support_negated_attribute(u_attribute, perc_area=0.1, criteria='cardinalidad
     num_membership_functions = u_attribute.shape[1]
     logica = 2 * num_membership_functions * [0]
 
-    if criteria == 'cardinalidade_relativa':
+    if criteria == 'cardinality':
         support_premises = u_attribute.sum(axis=0)
-    else:  # criteria == 'frequencia_relativa'
+    else:  # criteria == 'frequency'
         aux = u_attribute > 0
         support_premises = aux.sum(axis=0)
         
@@ -120,14 +120,14 @@ def support_basic_premises(ref_attrib, premises, num_premises_by_attrib, ux,
                                                    criteria, tolerance)
 
 
-def support_premises_derived(x, perc_area=0.1, criteria='cardinalidade_relativa'):
+def support_premises_derived(x, perc_area=0.1, criteria='cardinality'):
     # Retorna True si el vectox cumple con el criterio de crop_area
     # ejemplo: x1 = [0,0,0.2,0.3,0] ===> return 1: si cumple
     #          x2 = [0,0,0.01,0,0] ====> return 0: no cumple
-    if criteria == 'cardinalidade_relativa':
+    if criteria == 'cardinality':
         logica = x.sum(axis=0) < x.shape[0] * perc_area
         return 0 if logica else 1
-    else:  # criteria == 'frequencia_relativa'
+    else:  # criteria == 'frequency'
         logica = (x > 0).sum(axis=0) < x.shape[0] * perc_area
         return 0 if logica else 1
 
@@ -136,8 +136,8 @@ def main():
     x1 = np.array([[0.], [0.], [0.21], [0.3], [0.]])  # (5L, 1L)
     x2 = np.array([[0.], [0.], [0.01], [0.], [0.]])   # (5L, 1L)
     #
-    # a1 = crop_areaf2(x1, 0.1, 'cardinalidade_relativa')
-    # a2 = crop_areaf2(x2, 0.1, 'cardinalidade_relativa')
+    # a1 = crop_areaf2(x1, 0.1, 'cardinality')
+    # a2 = crop_areaf2(x2, 0.1, 'cardinality')
     #
     # if a1 == 1:
     #     print "x1 paso el criterio del area"

@@ -7,11 +7,12 @@ from ..base.decision import Decision
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.base import BaseEstimator,ClassifierMixin
+from sklearn.metrics import accuracy_score
 
-class AutoFISClassifier(BaseEstimator,ClassifierMixin):
+class AutoFISClassifier(BaseEstimator, ClassifierMixin):
 
     def __init__(self,triangle_format:str = 'normal',n_fuzzy_sets = 5,enable_negation = False,
-                premise_max_size = 2,t_norm = 'prod',criteria_support = 'cardinalidade_relativa',area_threshold = 0.05,
+                premise_max_size = 2,t_norm = 'prod',criteria_support = 'cardinality',area_threshold = 0.05,
                 enable_pcd_premises_base = True, enable_pcd_premises_derived = True,
                 enable_similarity_premises_bases = True, enable_similarity_premises_derived = True,
                 threshold_similarity = 0.95, association_method = 'MQR', aggregation_method = 'MQR'):
@@ -23,7 +24,7 @@ class AutoFISClassifier(BaseEstimator,ClassifierMixin):
         Proposed by Paredes, J. et al
 
         DOI: 10.1007/978-3-319-40596-4_41
-        
+
         Available at: https://www.researchgate.net/publication/303901120_Automatic_Synthesis_of_Fuzzy_Inference_Systems_for_Classification 
 
         This class encapsulates all the steps for the AutoFIS Classifier.
@@ -33,14 +34,12 @@ class AutoFISClassifier(BaseEstimator,ClassifierMixin):
 
         triangle_format: Format of the fuzzy set. Options: `'normal','tukey'`
 
-
         Attributes
         ----------
-        
+
         uX_: matrix with the fuzzified features.
 
         tree_: tree created with premises and rules.
-
 
         Methods
         ----------
@@ -60,7 +59,7 @@ class AutoFISClassifier(BaseEstimator,ClassifierMixin):
         self.t_norm = t_norm  # "min", "prod"
 
         # Area filter parameters:
-        self.criteria_support = criteria_support  # "cardinalidade_relativa", "frequencia_relativa"
+        self.criteria_support = criteria_support  # 'cardinality', 'frequency'
         self.area_threshold = area_threshold
         self.enable_pcd_premises_base = enable_pcd_premises_base
         self.enable_pcd_premises_derived = enable_pcd_premises_derived
@@ -72,7 +71,6 @@ class AutoFISClassifier(BaseEstimator,ClassifierMixin):
 
         self.association_method = association_method  # "MQR", "PMQR", "CD", "PCD", "freq_max"
         self.aggregation_method = aggregation_method  # "MQR", "PMQR", "CD", "PCD", "freq_max"
-
 
 
     def fit(self,X,y = None, categorical_attributes:list = None, verbose = 0):
@@ -118,6 +116,10 @@ class AutoFISClassifier(BaseEstimator,ClassifierMixin):
         y_pred_one_hot = self.decision_maker_.predict(uX_pred,self.t_norm)
         y_pred = self.y_encoder_.inverse_transform(y_pred_one_hot)
         return y_pred
+
+    def score(self, X, y = None):
+        y_pred = self.predict(X)
+        return accuracy_score(y_pred, y)
 
     def _fuzzify(self,X):
     
