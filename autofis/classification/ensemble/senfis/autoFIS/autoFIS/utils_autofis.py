@@ -149,7 +149,7 @@ def create_data(ref_attributes, size_attributes, premises_by_attribute, premises
     size_resample_ux_train = np.floor(pow(size_ux_train, 1)).astype(int)
     ux, new_y_bin = resample(ux_train, y_bin, replace=True, n_samples=size_resample_ux_train)
 
-    # TODO: Aqui eh onde ocorre o Bagging do RandomFIS
+    # TODO: Aqui eh onde ocorre o BLB do RandomFIS
     # Selection features
     # num_random_features = int(pow(len(ref_attributes), 1))  # optional multipliers: (0.5, 1, 2)
     num_random_features = int(math.log(len(ref_attributes), 2) + 1)

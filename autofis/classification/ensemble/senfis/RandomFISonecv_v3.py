@@ -67,26 +67,30 @@ def random_fis_one_cv(zipFilePath, file_train, file_test, parameters_classifiers
 
     param = GlobalParameter()
     for i in range(parameters[-4]):
-
+        # Aqui ele fuzifica e faz a bag of little bootstrap?
+        # Nao, ele ja entra fuzzificado
         ux_train_blb, new_y_bin_blb, index_oob = toolfis.data_blb(ux_train, cbin_train)
 
         classifiers_blb = []
 
         n_blb = list(range(param.blb))
-        print(n_blb)
-        # TODO: Parei aqui. Aqui é onde ocorre a montagem do classificador randomfis
+        # TODO: Parei aqui. Aqui é onde ocorre a montagem do classificador SENFIS
         for blb_i in n_blb:
-            # TODO: Aqui é onde ele cria os subsets do randomFIS. blb = bag of little bootstrap
+            # TODO: Aqui é onde ele cria os subsets do SENFIS. blb = bag of little bootstrap
             new_data_blb, genesis_data_blb = toolfis.create_data(ref_attributes, sizes_attributes,
                                                                  premises_by_attribute,
                                                                  premises_contain_negation,
                                                                  ux_train_blb, new_y_bin_blb)
-            
+            # genesis = [columns, random_features, sub_premises_by_attribute]  # the most important is "columns"
+            # sub_data = [new_ux, new_y_bin, new_ref_attributes, new_premises_by_attribute,
+                # sub_sizes_attributes, sub_premises_contain_negation]
+            # genesis e subdata sao retornos do create_data
+
             # TODO: Aqui é onde ele faz o autofis, eu acho.
             exit_flag_blb, out_model_blb = toolfis.inference_fuzzy(new_data_blb, pars, info=(str(blb_i), str(i+1)),
                                                                    ensemble='RandomFIS')
             #  out_model = [premises_weights_names, train_bin_prediction, estimation_classes(u_estimation)]
-
+            # Aqui ele imprime no console "Aggregation finished" pra cada sub classificador
 
             if exit_flag_blb:
                 # successful_classifiers += 1
@@ -100,23 +104,27 @@ def random_fis_one_cv(zipFilePath, file_train, file_test, parameters_classifiers
                     end_premises_classes_blb.append(absolute_premises_blb)  # For estimation metrics rules and premises
                     absolute_model_blb.append([absolute_premises_blb, j[1], j[2]])  # premises absolutes, Weights, name_method
                 classifiers_blb.append(absolute_model_blb)
+        #Aqui no numero de classificadores ja da pra ver que nem todos eles restam. de 10 classificadores só 8 conseguiram ser criados.
 
         num_classes = cbin_train.shape[1]
         indexes_premises_byclass = []
-
         for ci in range(num_classes):  # debo de colocar aqui el numero de clases
             container_aux = []
             for j in classifiers_blb:
                 container_aux.append(j[ci][0])
-
+            # Aqui ele começa a remover as premissas redundantes entre os sub classificadores
             list_premises_container = list(chain(*container_aux))
             unique_indexes = list(set(list_premises_container))
             unique_premises = toolfis.calculation_premises(unique_indexes, ux_train_blb, t_norm)
             indexes_premises_byclass.append([unique_indexes, unique_premises])
 
+        # O passo de agregação dos classificadores ocorre aqui. tudo junto. Não é exatamente o mesmo do autoFIS
         success, out_model = toolfis.classifiers_aggregation(indexes_premises_byclass, new_y_bin_blb, 'MQR',
                                                              freq_classes, info=('All models', str(i+1)))
-
+                                                            #  No final ele printa a mensagem "All models aggregation finished"
+                                                            # Na vdd isso me parece um pruning das agregações
+        # Essa parte aqui do final é inutil. Só tem q extrair como fazer o .predict no passo do eval_metrics
+        # O método acho que é o eval_classifier_one
         if success:
             successful_classifiers += 1
             absolute_model = []

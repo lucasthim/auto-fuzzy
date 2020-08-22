@@ -8,7 +8,7 @@ def readme():
 
 setup(name='autofis',
       version = '0.1',
-      description = 'Automatic Fuzzy Inference System Toolkit',
+      description = 'Automatic Synthesis of Fuzzy Inference Systems Toolkit',
       long_description = readme(),
       url = 'https://github.com/lucasthim/auto-fuzzy',
       license = 'MIT',

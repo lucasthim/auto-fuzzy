@@ -57,8 +57,8 @@ def random_fis_one_zip(root, zip_file_name, parameters_classifiers, report_folde
 
         param = GlobalParameter()
 
-        # for i in range(number_cv_pairs):
-        for i in range(2):
+        for i in range(number_cv_pairs):
+        # for i in range(2):
 
             train_file = list_train[i]
             test_file = list_test[i]
