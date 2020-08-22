@@ -1,15 +1,14 @@
 import os
+from autoFIS.autoFIS.databases_map import dictionary_data
+import autoFIS.autoFIS.utils_autofis as toolfis
+from autoFIS.autoFIS.evaluation import Evaluation
+from itertools import chain
 import timeit
 import datetime
-from itertools import chain
-
-import senfis.autoFIS.autoFIS.utils_autofis as toolfis
-from senfis.autoFIS.autoFIS.databases_map import dictionary_data
-from senfis.autoFIS.autoFIS.evaluation import Evaluation
-from .RandomFISonezip import random_fis_one_zip
-
+from RandomFISonezip import random_fis_one_zip
 from evalRF import normalizar
 from parameters_init import GlobalParameter
+
 
 def define_parameters(database_name, pars):
     try:
@@ -93,12 +92,17 @@ def container_results(number_cv_pairs):
     successful_classifiers = number_cv_pairs * [0]
     return ac_train, ac_test, auc_train, auc_test, num_rules, total_rule_length, successful_classifiers
 
-
+# TODO: Método principal!!!
 def run_random_fis(root, data, autofis_parameters, report_folder, clf_n, folder__tree_outpus):
     t0 = timeit.default_timer()
     try:
         data_name_key = data[0:-16]
         parameters_database = define_parameters(data_name_key, autofis_parameters)
+        print('')
+        print('parameters_database:',parameters_database)
+        print('clf_n:',clf_n)
+        print('data_name_key:',data_name_key)
+        print('------------------------------------')
         achievement, out_results = random_fis_one_zip(root, data, parameters_database, report_folder, clf_n,
                                                       folder__tree_outpus, data_name_key, t0)
         if achievement == 0:
@@ -106,6 +110,7 @@ def run_random_fis(root, data, autofis_parameters, report_folder, clf_n, folder_
     except ValueError as e:
         achievement = 0
         out_results = ""
+        print('Problem running RandomFIS.')
         print (e)
     tf = timeit.default_timer()
     time_end = tf - t0
@@ -134,6 +139,7 @@ def eval_n_classifiers(folder_databases, databases, dic_architectures, n_classif
         folder_i_classifiers_evaluated = os.path.join(folder_datetime, str(i))
         os.makedirs(folder_i_classifiers_evaluated)
         list_architectures = dic_architectures[i]
+        print('n_classifiers', n_classifiers)
         eval_architectures(list_architectures, folder_i_classifiers_evaluated, folder_databases, databases, i)
 
 
@@ -189,7 +195,6 @@ def load_parameters_random_classifiers(n_classf, bin, percent_oob, percet_resamp
                   percent_oob,
                   percet_resample,
                   enable_oob]
-
     return [parameters]
 
 
@@ -200,19 +205,18 @@ def get_list_databases(folder_databases):
 
 def main():
     # RandomFIS parameters
-    for j in range(1):
-        param = GlobalParameter()
-        type_data = param.t_data
-        n_classifiers_parameters = {}
-        for i in param.n_classifiers:
-            n_classifiers_parameters[i] = load_parameters_random_classifiers(i, type_data, param.method_aggregation,
-                                                                             param.percent_resample,  param.blb)
+    param = GlobalParameter()
+    type_data = param.t_data
+    n_classifiers_parameters = {}
+    for i in param.n_classifiers:
+        n_classifiers_parameters[i] = load_parameters_random_classifiers(i, type_data, param.method_aggregation,
+                                                                         param.percent_resample,  param.blb)
+    root_databases = os.path.dirname(os.path.realpath(__file__))
+    databases = get_list_databases(root_databases)
+    # print('Clf parameters:')
+    # print(n_classifiers_parameters)
 
-        root_databases = os.path.dirname(os.path.realpath(__file__))
-        databases = get_list_databases(root_databases)
-        print (databases)
-
-        eval_n_classifiers(root_databases, databases, n_classifiers_parameters, param.n_classifiers)
+    eval_n_classifiers(root_databases, databases, n_classifiers_parameters, param.n_classifiers)
 
 
 if __name__ == '__main__':

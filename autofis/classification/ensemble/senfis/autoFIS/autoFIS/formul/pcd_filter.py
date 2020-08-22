@@ -3,7 +3,7 @@ __author__ = 'jparedes'
 
 from itertools import compress, chain
 from numpy import tile, spacing, array
-from similarity_filter import splitListFromSizes
+from .similarity_filter import splitListFromSizes
 
 
 def get_CD(P, C):

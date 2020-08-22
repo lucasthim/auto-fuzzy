@@ -1,7 +1,7 @@
 __author__ = 'jparedes'
 
 from sklearn import metrics
-from decisions import Decisions
+from .decisions import Decisions
 import numpy as np
 from itertools import chain
 

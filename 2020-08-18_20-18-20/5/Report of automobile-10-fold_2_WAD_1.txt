@@ -1,0 +1,15 @@
+Parameters Classifiers
+----------------------
+['tukey', 3, 'prod', 1, 2, 'frequencia_relativa', 0.075, [0, 0], [1, 1], 0.95, 'MQR', 'MQR', 5, 4, 0.9, 10]
+==============================================================================================================
+    CV-1:
+                
+    
+    Successful classifiers: [2, 'WAD', 1]
+    Accuracy training: 70.2127659574468
+    Accuracy Testing: 66.66666666666666
+    AUC Training: 0.9695804195804195
+    AUC Testing: 0.921875
+    Number of Rules: 37
+    Total Rule Length: 59 / Average: 1.5946
+    

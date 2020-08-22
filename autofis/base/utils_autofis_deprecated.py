@@ -27,6 +27,7 @@ from .association import Association
 from .formul.formulation import Formulation
 from .parameters_init import GlobalParameter
 
+# TODO: double check and delete this file
 def dummies2int(binary_classes):
     return [i.index(1) + 1 for i in binary_classes.tolist()]
 

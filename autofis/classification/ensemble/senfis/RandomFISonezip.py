@@ -1,11 +1,10 @@
 from numpy import mean, std
+import autoFIS.autoFIS.utils_autofis as toolfis
 import zipfile
 import os
+from RandomFISonecv_v3 import random_fis_one_cv, selection_criteria  # RandomFISonecv_wad, RandomFISonecv_v2
+from parameters_init import GlobalParameter
 from itertools import product
-
-from .autoFIS.autoFIS import utils_autofis as toolfis
-from .RandomFISonecv_v3 import random_fis_one_cv, selection_criteria  # RandomFISonecv_wad, RandomFISonecv_v2
-from .parameters_init import GlobalParameter
 
 
 def packing_train_test_files(files_cv):
@@ -58,7 +57,8 @@ def random_fis_one_zip(root, zip_file_name, parameters_classifiers, report_folde
 
         param = GlobalParameter()
 
-        for i in range(number_cv_pairs):
+        # for i in range(number_cv_pairs):
+        for i in range(2):
 
             train_file = list_train[i]
             test_file = list_test[i]

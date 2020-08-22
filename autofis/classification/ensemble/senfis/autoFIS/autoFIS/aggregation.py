@@ -2,7 +2,7 @@ __author__ = 'jparedes'
 
 # -*- coding: utf-8 -*-
 import numpy as np
-from auxfunc import calculate_cd_transpose, iter_beta, int_premisas
+from .auxfunc import calculate_cd_transpose, iter_beta, int_premisas
 from itertools import compress
 from sklearn import linear_model  # to use LogisticRegression
 

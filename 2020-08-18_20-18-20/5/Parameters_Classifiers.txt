@@ -1,0 +1,1 @@
+['tukey', 3, 'prod', 1, 2, 'frequencia_relativa', 0.075, [0, 0], [1, 1], 0.95, 'MQR', 'MQR', 5, 4, 0.9, 10]

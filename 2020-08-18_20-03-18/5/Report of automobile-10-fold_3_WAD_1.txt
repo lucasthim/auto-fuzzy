@@ -1,0 +1,54 @@
+Parameters Classifiers
+----------------------
+['tukey', 3, 'prod', 1, 2, 'frequencia_relativa', 0.075, [0, 0], [1, 1], 0.95, 'MQR', 'MQR', 5, 4, 0.9, 10]
+==============================================================================================================
+    CV-1:
+                
+    
+    Successful classifiers: [3, 'WAD', 1]
+    Accuracy training: 72.3404255319149
+    Accuracy Testing: 72.22222222222221
+    AUC Training: 0.9255244755244756
+    AUC Testing: 0.890625
+    Number of Rules: 37
+    Total Rule Length: 65 / Average: 1.7568
+    
+
+==============================================================================================================
+    CV-2:
+                
+    
+    Successful classifiers: [3, 'WAD', 1]
+    Accuracy training: 72.72727272727273
+    Accuracy Testing: 62.5
+    AUC Training: 0.8893129770992366
+    AUC Testing: 1.0
+    Number of Rules: 40
+    Total Rule Length: 72 / Average: 1.8000
+    
+
+==============================================================================================================
+    CV-3:
+                
+    
+    Successful classifiers: [3, 'WAD', 1]
+    Accuracy training: 70.74829931972789
+    Accuracy Testing: 66.66666666666666
+    AUC Training: 0.9037037037037037
+    AUC Testing: 1.0
+    Number of Rules: 46
+    Total Rule Length: 77 / Average: 1.6739
+    
+
+==============================================================================================================
+    CV-4:
+                
+    
+    Successful classifiers: [3, 'WAD', 1]
+    Accuracy training: 69.71830985915493
+    Accuracy Testing: 76.47058823529412
+    AUC Training: 0.930448717948718
+    AUC Testing: 1.0
+    Number of Rules: 44
+    Total Rule Length: 71 / Average: 1.6136
+    

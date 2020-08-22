@@ -1,18 +1,18 @@
 from sklearn.utils import resample
 from itertools import chain
 import random
-from lecture import Lecture
-from fuzzification import Fuzzification
-from formul.formulation import Formulation
-from association import Association
-from aggregation import Aggregation
-from decisions import Decisions
+from .lecture import Lecture
+from .fuzzification import Fuzzification
+from .formul.formulation import Formulation
+from .association import Association
+from .aggregation import Aggregation
+from .decisions import Decisions
 import numpy as np
 import os
 import math
 from parameters_init import GlobalParameter
 
-from skfeature.function.statistical_based import CFS
+# from skfeature.function.statistical_based import CFS
 from sklearn.feature_selection import SelectKBest, SelectPercentile
 from sklearn.feature_selection import chi2, f_classif
 from sklearn.ensemble import ExtraTreesClassifier
@@ -149,10 +149,11 @@ def create_data(ref_attributes, size_attributes, premises_by_attribute, premises
     size_resample_ux_train = np.floor(pow(size_ux_train, 1)).astype(int)
     ux, new_y_bin = resample(ux_train, y_bin, replace=True, n_samples=size_resample_ux_train)
 
+    # TODO: Aqui eh onde ocorre o Bagging do RandomFIS
     # Selection features
     # num_random_features = int(pow(len(ref_attributes), 1))  # optional multipliers: (0.5, 1, 2)
     num_random_features = int(math.log(len(ref_attributes), 2) + 1)
-    random_features = resample(range(len(ref_attributes)), replace=False, n_samples=num_random_features)
+    random_features = resample(range(len(ref_attributes)), replace = False, n_samples = num_random_features)
     sub_sizes_attributes = [size_attributes[i] for i in random_features]
     sub_premises_by_attribute = [premises_by_attribute[i] for i in random_features]
     sub_premises_contain_negation = [premises_contain_negation[i] for i in premises_contain_negation]
@@ -361,6 +362,7 @@ def lecture_fuz_one_cv_v2(train, test, parameters):
     return fuz_train, fuz_test, attributes_information, freq_classes
 
 
+# TODO: Acho que aqui é onde ele faz cada sub-autoFIS
 def inference_fuzzy(data_fuz, parameters, info, ensemble="BagFIS"):  # Formulation, Association, Aggregation, Decisions
     # En la salida de samudio es los grados de pertinencia por clase
     # Para Jorge es binario

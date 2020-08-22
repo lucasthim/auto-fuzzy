@@ -73,12 +73,16 @@ def random_fis_one_cv(zipFilePath, file_train, file_test, parameters_classifiers
         classifiers_blb = []
 
         n_blb = list(range(param.blb))
-
+        print(n_blb)
+        # TODO: Parei aqui. Aqui é onde ocorre a montagem do classificador randomfis
         for blb_i in n_blb:
+            # TODO: Aqui é onde ele cria os subsets do randomFIS. blb = bag of little bootstrap
             new_data_blb, genesis_data_blb = toolfis.create_data(ref_attributes, sizes_attributes,
                                                                  premises_by_attribute,
                                                                  premises_contain_negation,
                                                                  ux_train_blb, new_y_bin_blb)
+            
+            # TODO: Aqui é onde ele faz o autofis, eu acho.
             exit_flag_blb, out_model_blb = toolfis.inference_fuzzy(new_data_blb, pars, info=(str(blb_i), str(i+1)),
                                                                    ensemble='RandomFIS')
             #  out_model = [premises_weights_names, train_bin_prediction, estimation_classes(u_estimation)]

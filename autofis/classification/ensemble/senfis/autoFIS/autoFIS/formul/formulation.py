@@ -2,9 +2,9 @@ __author__ = 'jparedes'
 
 import numpy as np
 from itertools import combinations, product, chain
-from support_filter import support_basic_premises, support_premises_derived
-from similarity_filter import similarity_basic_premises, similarity_derived_premises
-from pcd_filter import pcd_basic_premises, pcd_derived_premises
+from .support_filter import support_basic_premises, support_premises_derived
+from .similarity_filter import similarity_basic_premises, similarity_derived_premises
+from .pcd_filter import pcd_basic_premises, pcd_derived_premises
 
 
 class Formulation:

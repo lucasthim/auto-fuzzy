@@ -6,8 +6,8 @@ import os
 
 
 def calculate_parameters(data):
-    X = data.ix[:, 0:-1].values  # attributes
-    clase = data.ix[:, -1]  # output class
+    X = data.iloc[:, 0:-1].values  # attributes
+    clase = data.iloc[:, -1]  # output class
     clase_bin = pd.get_dummies(clase)
     cBin = clase_bin.values  # binary output class
 

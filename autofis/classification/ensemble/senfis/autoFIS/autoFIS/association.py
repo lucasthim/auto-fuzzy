@@ -2,7 +2,7 @@ __author__ = 'jparedes'
 
 # -*- coding: utf-8 -*-
 from numpy import tile, spacing, zeros, concatenate
-from auxfunc import iter_beta  # , get_CD  # calc_CD, calc_PCD, calc_freqmax
+from .auxfunc import iter_beta  # , get_CD  # calc_CD, calc_PCD, calc_freqmax
 from itertools import compress
 
 
