@@ -1,1 +1,2 @@
 from .classification.autofis_classifier import AutoFISClassifier
+from .classification.senfis_classifier import SENFISClassifier

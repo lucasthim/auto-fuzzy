@@ -20,13 +20,14 @@ class Decision:
 
         """
         This function decide to which class belong each instance
-        :return: Binary classification
+        :return: One hot classification vector
         Example
-           y_estimation [0.80 0.15 0.05
+           y_estimation : [0.80 0.15 0.05
                                     0.03 0.90 0.07
                                     0.20 0.40 0.40
                                     0.20 0.10 0.70]
            self.percentage_of_classes: [0.33 0.33 0.33]
+
            Output:
                     [1, 0, 0]
                     [0, 1, 0]

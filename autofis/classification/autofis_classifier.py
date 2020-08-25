@@ -17,7 +17,6 @@ class AutoFISClassifier(BaseEstimator, ClassifierMixin):
                 enable_similarity_premises_bases = True, enable_similarity_premises_derived = True,
                 threshold_similarity = 0.95, association_method = 'MQR', aggregation_method = 'MQR'):
 
-
         """
         Automatic Synthesis of Fuzzy Inference Systems for Classification
 
@@ -27,7 +26,7 @@ class AutoFISClassifier(BaseEstimator, ClassifierMixin):
 
         Available at: https://www.researchgate.net/publication/303901120_Automatic_Synthesis_of_Fuzzy_Inference_Systems_for_Classification 
 
-        This class encapsulates all the steps for the AutoFIS Classifier.
+        This class encapsulates all the steps for the AutoFIS Classifier Model.
 
         Parameters:
         ----------
@@ -92,7 +91,6 @@ class AutoFISClassifier(BaseEstimator, ClassifierMixin):
 
         if categorical_attributes is None:
             raise ValueError('categorical_attributes must be set by the user.')
-        # TODO: Check inputs here
 
         self.categorical_attributes = categorical_attributes
         self.verbose = verbose
